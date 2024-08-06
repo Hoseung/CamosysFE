@@ -5,12 +5,67 @@ import cv2
 import threading
 import queue
 
+
+# def decode_label_data(data):
+#     """
+#     Decode label data from the received packed data.
+
+#     Args:
+#     data (bytes): The packed label data received from the server.
+
+#     Returns:
+#     tuple: The decoded label values.
+#     """
+#     label_format = (
+#         '=b e b ? e ? ? ? ? ? ' + # Int8, float16, Int8, bool, float16, 5*bool,
+#         '68H 68H ' + # 68 * uint16 (face landmark X and Y)
+#         '14H 14H 14H ' +  # 3*14*uint16 (3D body keypoints)
+#         '10b ' +  # 10*int8 Joint length
+#         '4H'  # 4*uint16 Face bounding box (x1, y1, x2, y2)
+#     )
+
+#     label_size = struct.calcsize(label_format)
+#     label_values = struct.unpack(label_format, data[:label_size])
+#     return label_values
+
+# Define the dtype for the recarray
+label_dtype = np.dtype([
+    ('distance', np.int8),
+    ('eye_openness', np.float16),
+    ('drowsiness', np.int8),
+    ('phoneuse', np.bool_),
+    ('phone_use_conf', np.float16),
+    ('passenger', np.bool_, (5,)),
+    ('face_landmarks_x', np.uint16, (68,)),
+    ('face_landmarks_y', np.uint16, (68,)),
+    ('body_keypoints_x', np.uint16, (14,)),
+    ('body_keypoints_y', np.uint16, (14,)),
+    ('body_keypoints_z', np.uint16, (14,)),
+    ('joint_lengths', np.int8, (10,)),
+    ('face_bounding_box', np.uint16, (4,))
+])
+
+# def create_recarray():
+#     # Create an empty recarray
+#     return np.recarray(1, dtype=label_dtype)
+
+# def update_recarray(label_recarray, label_data):
+#     # Ensure the length of label_data matches the size of the recarray's item
+#     assert len(label_data) == label_recarray.itemsize, "Data size mismatch"
+#     # Directly copy the data into the recarray's buffer
+#     label_recarray.data[:] = label_data
+
 class Client:
-    def __init__(self, server_ip, port=65432):
+    def __init__(self, server_ip, port=65432, frame_width=640, frame_height=480):
         self.server_address = (server_ip, port)
         self.sock = None
+        self.frame_width = frame_width
+        self.frame_height = frame_height
         self.frame_queue = queue.Queue(maxsize=10)  # Buffer with max size
+        self.label_size = struct.calcsize(
+                    '=b e b ? e ? ? ? ? ? ' + '68H 68H ' + '14H 14H 14H ' + '10b ' + '4H')
         self.running = True
+        self.label_array = None
 
     def setup_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,19 +95,24 @@ class Client:
                     break
 
                 # Convert the byte data to a numpy array
-                frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((480, 640, 3))
+                frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self.frame_height, self.frame_width, 3))
 
                 # Put the frame in the queue if space is available
                 if not self.frame_queue.full():
                     self.frame_queue.put(frame)
 
-                # Receive and print the byte array
-                byte_array_data = self.sock.recv(30)
-                if not byte_array_data:
-                    break
-                byte_array = struct.unpack('!10b10e', byte_array_data)
-                print("Received byte array:", byte_array)
+                # Convert the byte data to a numpy array
+                frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self.frame_height, self.frame_width, 3))
+                self.frame_queue.put(frame)
 
+                label_data = self.sock.recv(self.label_size)
+                if not label_data:
+                    break
+                
+                self.label_array = np.frombuffer(label_data, dtype=label_dtype)
+                
+                #print("Received label values:", self.label_array)
+                
             except Exception as e:
                 print(f"Error receiving data: {e}")
                 break
