@@ -9,7 +9,7 @@ class Client:
     def __init__(self, server_ip, port=65432):
         self.server_address = (server_ip, port)
         self.sock = None
-        self.frame_queue = queue.Queue()
+        self.frame_queue = queue.Queue(maxsize=10)  # Buffer with max size
         self.running = True
 
     def setup_socket(self):
@@ -42,8 +42,9 @@ class Client:
                 # Convert the byte data to a numpy array
                 frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((480, 640, 3))
 
-                # Put the frame in the queue
-                self.frame_queue.put(frame)
+                # Put the frame in the queue if space is available
+                if not self.frame_queue.full():
+                    self.frame_queue.put(frame)
 
                 # Receive and print the byte array
                 byte_array_data = self.sock.recv(30)
@@ -88,3 +89,4 @@ class Client:
         if self.sock:
             self.sock.close()
         cv2.destroyAllWindows()
+        self.running = False
