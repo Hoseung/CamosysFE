@@ -2,15 +2,15 @@ import socket
 import struct
 import numpy as np
 import cv2
+import threading
+import queue
 
 class Client:
-    def __init__(self, server_ip, port=65432, 
-                 frame_width=640, 
-                 frame_height=480):
+    def __init__(self, server_ip, port=65432):
         self.server_address = (server_ip, port)
         self.sock = None
-        self._frame_width = frame_width
-        self._frame_height = frame_height
+        self.frame_queue = queue.Queue()
+        self.running = True
 
     def setup_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,56 +20,69 @@ class Client:
         print("Connected to server at {}:{}".format(*self.server_address))
 
     def receive_frame(self):
-        # Receive the frame size
-        frame_size_data = self.sock.recv(4)
-        if not frame_size_data:
-            return None
-        frame_size = struct.unpack('!I', frame_size_data)[0]
+        while self.running:
+            try:
+                # Receive the frame size
+                frame_size_data = self.sock.recv(4)
+                if not frame_size_data:
+                    break
+                frame_size = struct.unpack('!I', frame_size_data)[0]
 
-        # Receive the frame data
-        frame_data = b''
-        while len(frame_data) < frame_size:
-            packet = self.sock.recv(frame_size - len(frame_data))
-            if not packet:
-                return None
-            frame_data += packet
+                # Receive the frame data
+                frame_data = b''
+                while len(frame_data) < frame_size:
+                    packet = self.sock.recv(frame_size - len(frame_data))
+                    if not packet:
+                        break
+                    frame_data += packet
 
-        # Convert the byte data to a numpy array
-        frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self._frame_height, self._frame_width, 3))
+                if len(frame_data) != frame_size:
+                    break
 
-        return frame
+                # Convert the byte data to a numpy array
+                frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((480, 640, 3))
 
-    def receive_byte_array(self):
-        # Receive the byte array (20 bytes: 10 int8 + 10 float16)
-        byte_array_data = self.sock.recv(30)
-        if not byte_array_data:
-            return None
-        byte_array = struct.unpack('!10b10e', byte_array_data)
-        return byte_array
+                # Put the frame in the queue
+                self.frame_queue.put(frame)
+
+                # Receive and print the byte array
+                byte_array_data = self.sock.recv(30)
+                if not byte_array_data:
+                    break
+                byte_array = struct.unpack('!10b10e', byte_array_data)
+                print("Received byte array:", byte_array)
+
+            except Exception as e:
+                print(f"Error receiving data: {e}")
+                break
+
+        self.cleanup()
+
+    def display_frame(self):
+        while self.running:
+            try:
+                frame = self.frame_queue.get(timeout=1)
+                cv2.imshow('Received Frame', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    self.running = False
+                    break
+            except queue.Empty:
+                continue
+
+        self.cleanup()
 
     def run(self):
         self.setup_socket()
-        try:
-            while True:
-                frame = self.receive_frame()
-                if frame is None:
-                    print("Error: Could not receive frame")
-                    break
 
-                # Display the received frame
-                cv2.imshow('Received Frame', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+        # Create and start the threads
+        receive_thread = threading.Thread(target=self.receive_frame)
+        display_thread = threading.Thread(target=self.display_frame)
 
-                byte_array = self.receive_byte_array()
-                if byte_array is None:
-                    print("Error: Could not receive byte array")
-                    break
+        receive_thread.start()
+        display_thread.start()
 
-                print("Received byte array:", byte_array)
-
-        finally:
-            self.cleanup()
+        receive_thread.join()
+        display_thread.join()
 
     def cleanup(self):
         if self.sock:
