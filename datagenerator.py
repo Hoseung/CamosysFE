@@ -28,9 +28,9 @@ class ImageDataGenerator:
 
 def fake_label_data_generator():
     while True:
-        distance = np.random.randint(-128, 127, dtype=np.int8)
+        distance = np.random.randint(1, 127, dtype=np.int8)
         eye_openness = np.float16(np.random.uniform(-1, 1))
-        drowsiness = np.random.randint(-128, 127, dtype=np.int8)
+        drowsiness = np.random.randint(0, 6, dtype=np.int8)
         phoneuse = bool(np.random.randint(0, 2))
         phone_use_conf = np.float16(np.random.uniform(-1, 1))
         passenger = [bool(np.random.randint(0, 2)) for _ in range(5)]
@@ -39,6 +39,7 @@ def fake_label_data_generator():
         body_keypoints = [np.random.randint(100, 600, 14, dtype=np.uint16) for _ in range(3)]
         joint_lengths = np.random.randint(5, 50, 10, dtype=np.int8)
         face_bounding_box = np.random.randint(10, 200, 4, dtype=np.uint16)
+        face_bounding_box[2:] = face_bounding_box[:2] + np.random.randint(10, 20, 2, dtype=np.uint16)
 
         label_values = (
             distance, eye_openness, drowsiness, phoneuse, phone_use_conf, *passenger,
@@ -49,39 +50,3 @@ def fake_label_data_generator():
         )
 
         yield label_values
-
-
-class DataGenerator:
-    def __init__(self, img_dir, label_path):
-        self._img_dir = img_dir
-        self._label_path = label_path
-        self._label = None
-        self.img_generator = ImageDataGenerator(self._img_dir)
-        self.init_label()
-        
-    def init_label(self):
-        self._label = self.label_generator(self._label_path)
-        fields_2d = [('cnt', 'i4')]
-        for part in ['head', 'lshoulder', 'rshoulder', 'lelbow', 'relbow', 'lhand', 'rhand', 'lpelvis', 'rpelvis', 'lknee', 'rknee']:
-            fields_2d.append((f"{part}_x", 'f4'))
-            fields_2d.append((f"{part}_y", 'f4'))
-            fields_2d.append((f"{part}_conf", 'f4'))
-            
-    def generate(self):
-        return (self.image_generator, self.label_generator)
-                
-    def label_generator(self, label_path):
-        """
-        Generator that yields labels one by one from a specified file.
-
-        Args:
-        label_path (str): Path to the file containing labels.
-
-        Yields:
-        str: A label.
-        """
-        with open(label_path, 'r') as file:
-            for line in file:
-                yield line.strip()
-                
-                

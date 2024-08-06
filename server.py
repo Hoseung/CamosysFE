@@ -2,7 +2,7 @@ import socket
 import cv2
 import struct
 import numpy as np
-from datagenerator import DataGenerator, ImageDataGenerator, fake_label_data_generator
+from datagenerator import ImageDataGenerator, fake_label_data_generator
 
 
 def pack_data(image, label_values):
@@ -25,7 +25,7 @@ def pack_data(image, label_values):
 
     # Define the format for the label data
     label_format = (
-        'b e b ? e ? ? ? ? ? ' + # Int8, float16, Int8, bool, float16, 5*bool,
+        '=b e b ? e ? ? ? ? ? ' + # Int8, float16, Int8, bool, float16, 5*bool,
         '68H 68H ' + # 68 * uint16 (face landmark X and Y)
         '14H 14H 14H ' +  # 3*14*uint16 (3D body keypoints)
         '10b ' +  # 10*int8 Joint length
@@ -56,9 +56,6 @@ class Server:
         self.label_generator = fake_label_data_generator()
         self.image_generator = ImageDataGenerator(self.img_dir)
     
-    def set_generator(self):    
-        self.generator = DataGenerator(self.img_dir, self.label_path)
-
     def setup_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
@@ -72,19 +69,6 @@ class Server:
         print("Connection from", addr)
         self.conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self.conn.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2**20)
-
-    # def send_frame(self, frame):
-    #     resized = cv2.resize(frame, (self.frame_width, self.frame_height), interpolation=cv2.INTER_LINEAR)
-    #     frame_data = resized.tobytes()
-    #     frame_size = len(frame_data)
-    #     self.conn.sendall(struct.pack('!I', frame_size))
-    #     self.conn.sendall(frame_data)
-
-    # def send_byte_array(self):
-    #     int8_values = np.random.randint(-128, 127, 10, dtype=np.int8)
-    #     float16_values = np.random.uniform(-1, 1, 10).astype(np.float16)
-    #     byte_array = struct.pack('!10b10e', *(int8_values.tolist() + float16_values.tolist()))
-    #     self.conn.sendall(byte_array)
         
     def send_data(self, image, label_values):
         packed_data = pack_data(image, label_values)
@@ -106,8 +90,3 @@ class Server:
             self.conn.close()
         if self.sock:
             self.sock.close()
-
-# Example usage
-if __name__ == "__main__":
-    server = Server(host_ip='127.0.0.1')
-    server.run()
