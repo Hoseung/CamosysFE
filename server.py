@@ -2,7 +2,8 @@ import socket
 import cv2
 import struct
 import numpy as np
-from datagenerator import DataGenerator, ImageDataGenerator
+from datagenerator import DataGenerator, ImageDataGenerator, fake_label_data_generator
+
 
 def pack_data(image, label_values):
     """
@@ -24,17 +25,18 @@ def pack_data(image, label_values):
 
     # Define the format for the label data
     label_format = (
-        'b e b ? e ? ? ? ? ? H H H H ' +  # Int8, float16, Int8, bool, float16, 5*bool, 4*uint16
-        '14H 14H 14H ' +  # 3*14*uint16
-        '10b ' +  # 10*int8
-        '4H'  # 4*uint16
+        'b e b ? e ? ? ? ? ? ' + # Int8, float16, Int8, bool, float16, 5*bool,
+        '68H 68H ' + # 68 * uint16 (face landmark X and Y)
+        '14H 14H 14H ' +  # 3*14*uint16 (3D body keypoints)
+        '10b ' +  # 10*int8 Joint length
+        '4H'  # 4*uint16 Face bounding box (x1, y1, x2, y2)
     )
 
     # Pack the label data
     packed_labels = struct.pack(label_format, *label_values)
 
     # Combine the image data and label data
-    packed_data = image_data + packed_labels
+    packed_data = struct.pack('!I', len(image_data)) + image_data + packed_labels
 
     return packed_data
 
@@ -51,7 +53,7 @@ class Server:
         self.frame_height = frame_height
         self.sock = None
         self.conn = None
-        self.geneartor = None
+        self.label_generator = fake_label_data_generator()
         self.image_generator = ImageDataGenerator(self.img_dir)
     
     def set_generator(self):    
@@ -71,28 +73,31 @@ class Server:
         self.conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self.conn.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2**20)
 
-    def send_frame(self, frame):
-        resized = cv2.resize(frame, (self.frame_width, self.frame_height), interpolation=cv2.INTER_LINEAR)
-        frame_data = resized.tobytes()
-        frame_size = len(frame_data)
-        self.conn.sendall(struct.pack('!I', frame_size))
-        self.conn.sendall(frame_data)
+    # def send_frame(self, frame):
+    #     resized = cv2.resize(frame, (self.frame_width, self.frame_height), interpolation=cv2.INTER_LINEAR)
+    #     frame_data = resized.tobytes()
+    #     frame_size = len(frame_data)
+    #     self.conn.sendall(struct.pack('!I', frame_size))
+    #     self.conn.sendall(frame_data)
 
-    def send_byte_array(self):
-        int8_values = np.random.randint(-128, 127, 10, dtype=np.int8)
-        float16_values = np.random.uniform(-1, 1, 10).astype(np.float16)
-        byte_array = struct.pack('!10b10e', *(int8_values.tolist() + float16_values.tolist()))
-        self.conn.sendall(byte_array)
+    # def send_byte_array(self):
+    #     int8_values = np.random.randint(-128, 127, 10, dtype=np.int8)
+    #     float16_values = np.random.uniform(-1, 1, 10).astype(np.float16)
+    #     byte_array = struct.pack('!10b10e', *(int8_values.tolist() + float16_values.tolist()))
+    #     self.conn.sendall(byte_array)
+        
+    def send_data(self, image, label_values):
+        packed_data = pack_data(image, label_values)
+        self.conn.sendall(packed_data)
 
     def run(self):
         self.setup_socket()
         self.accept_connection()
-        self.set_generator()
         try:
             while True:
-                frame = next(self.image_generator)
-                self.send_frame(frame)
-                self.send_byte_array()
+                image = next(self.image_generator)
+                label_values = next(self.label_generator)
+                self.send_data(image, label_values)
         finally:
             self.cleanup()
 
