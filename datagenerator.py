@@ -29,14 +29,14 @@ class ImageDataGenerator:
 def fake_label_data_generator():
     while True:
         distance = np.random.randint(1, 127, dtype=np.int8)
-        eye_openness = np.float16(np.random.uniform(-1, 1))
+        eye_openness = np.float16(np.random.uniform(0, 1))
         drowsiness = np.random.randint(0, 6, dtype=np.int8)
         phoneuse = bool(np.random.randint(0, 2))
-        phone_use_conf = np.float16(np.random.uniform(-1, 1))
+        phone_use_conf = np.float16(np.random.uniform(0, 1))
         passenger = [bool(np.random.randint(0, 2)) for _ in range(5)]
         face_landmarks_x = np.random.randint(0, 640, 68, dtype=np.uint16)
         face_landmarks_y = np.random.randint(0, 480, 68, dtype=np.uint16)
-        body_keypoints = [np.random.randint(100, 600, 14, dtype=np.uint16) for _ in range(3)]
+        body_keypoints = [np.random.randint(50, 600, 14, dtype=np.uint16) for _ in range(3)]
         joint_lengths = np.random.randint(5, 50, 10, dtype=np.int8)
         face_bounding_box = np.random.randint(10, 200, 4, dtype=np.uint16)
         face_bounding_box[2:] = face_bounding_box[:2] + np.random.randint(10, 20, 2, dtype=np.uint16)
