@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 import numpy as np
-import struct
+import cv2
 
 class ImageDataGenerator:
     def __init__(self, directory):
@@ -25,6 +25,30 @@ class ImageDataGenerator:
         self.index += 1
 
         return image_data
+
+class CameraDataGenerator:
+    def __init__(self, camera_index=0):
+        self.cap = cv2.VideoCapture(camera_index)
+        if not self.cap.isOpened():
+            raise Exception("Could not open video device")
+
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        ret, frame = self.cap.read()
+        if not ret:
+            raise Exception("Could not read frame from camera")
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(frame, (640, 480))
+        return frame
+
+    def release(self):
+        self.cap.release()
 
 def fake_label_data_generator():
     while True:
