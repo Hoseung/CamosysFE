@@ -82,7 +82,7 @@ class Client:
                 if not frame_size_data:
                     break
                 frame_size = struct.unpack('!I', frame_size_data)[0]
-
+                print("Frame size", frame_size)
                 # Receive the frame data
                 frame_data = b''
                 while len(frame_data) < frame_size:
@@ -108,7 +108,7 @@ class Client:
                 label_data = self.sock.recv(self.label_size)
                 if not label_data:
                     break
-                
+                print("Received label data size:", len(label_data))
                 self.label_array = np.frombuffer(label_data, dtype=label_dtype)
                 
                 #print("Received label values:", self.label_array)
