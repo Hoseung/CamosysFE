@@ -44,6 +44,7 @@ class CameraDataGenerator:
             raise Exception("Could not read frame from camera")
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(frame, (640, 480))
         return frame
 
     def release(self):

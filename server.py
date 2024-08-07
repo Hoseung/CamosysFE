@@ -35,17 +35,17 @@ def pack_data(image, label_values):
     # Pack the label data
     packed_labels = struct.pack(label_format, *label_values)
 
-    print("Image data size:", len(image_data))
-    print("Label data size:", len(packed_labels))
+    # print("Image data size:", len(image_data))
+    # print("Label data size:", len(packed_labels))
     
     # Combine the image data and label data
     packed_data = struct.pack('!I', len(image_data)) + image_data + packed_labels
-    print("Total data size:", len(packed_data))
+    # print("Total data size:", len(packed_data))
     return packed_data
 
 
 class Server:
-    def __init__(self, host_ip, img_dir, label_path, 
+    def __init__(self, host_ip, label_path, img_dir=None,
                  source='image',
                  port=65432, 
                  frame_width=640, 
@@ -60,7 +60,7 @@ class Server:
         
         self.label_generator = fake_label_data_generator()
         if source == 'camera':
-            self.data_generator = CameraDataGenerator()
+            self.image_generator = CameraDataGenerator()
         elif source == 'image' and img_dir:    
             self.image_generator = ImageDataGenerator(self.img_dir)
         else:
