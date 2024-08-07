@@ -35,9 +35,12 @@ def pack_data(image, label_values):
     # Pack the label data
     packed_labels = struct.pack(label_format, *label_values)
 
+    print("Image data size:", len(image_data))
+    print("Label data size:", len(packed_labels))
+    
     # Combine the image data and label data
     packed_data = struct.pack('!I', len(image_data)) + image_data + packed_labels
-
+    print("Total data size:", len(packed_data))
     return packed_data
 
 
