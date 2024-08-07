@@ -2,7 +2,7 @@ import socket
 import cv2
 import struct
 import numpy as np
-from datagenerator import ImageDataGenerator, fake_label_data_generator
+from datagenerator import (ImageDataGenerator, CameraDataGenerator, fake_label_data_generator)
 
 
 def pack_data(image, label_values):
@@ -46,6 +46,7 @@ def pack_data(image, label_values):
 
 class Server:
     def __init__(self, host_ip, img_dir, label_path, 
+                 source='image',
                  port=65432, 
                  frame_width=640, 
                  frame_height=480):
@@ -56,8 +57,14 @@ class Server:
         self.frame_height = frame_height
         self.sock = None
         self.conn = None
+        
         self.label_generator = fake_label_data_generator()
-        self.image_generator = ImageDataGenerator(self.img_dir)
+        if source == 'camera':
+            self.data_generator = CameraDataGenerator()
+        elif source == 'image' and img_dir:    
+            self.image_generator = ImageDataGenerator(self.img_dir)
+        else:
+            raise ValueError("Invalid source type. Must be 'camera' or 'image' with a valid image directory.")
     
     def setup_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
