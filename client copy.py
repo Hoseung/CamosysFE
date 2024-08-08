@@ -69,8 +69,8 @@ class Client:
 
     def setup_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        #self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2**20)
+        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2**20)
         self.sock.connect(self.server_address)
         print("Connected to server at {}:{}".format(*self.server_address))
 
@@ -78,11 +78,12 @@ class Client:
         while self.running:
             try:
                 # Receive the frame size
-                frame_size_data = self.sock.recv(4)
-                if not frame_size_data:
-                    break
-                frame_size = struct.unpack('!I', frame_size_data)[0]
-                print("Frame size", frame_size)
+                #frame_size_data = self.sock.recv(4)
+                #if not frame_size_data:
+                 #   break
+                #frame_size = struct.unpack('!I', frame_size_data)[0]
+                #print("Frame size", frame_size)
+                frame_size = 640 * 480 * 2
                 # Receive the frame data
                 frame_data = b''
                 while len(frame_data) < frame_size:
@@ -94,27 +95,28 @@ class Client:
                 if len(frame_data) != frame_size:
                     break
 
-                # Convert the byte data to a numpy array
-                frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self.frame_height, self.frame_width, 3))
+
+                yuv_frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((480, 640, 2))
+
+                # Convert YUV422 back to BGR for display
+                frame = cv2.cvtColor(yuv_frame, cv2.COLOR_YUV2BGR_YVYU)
+                
+                ## Convert the byte data to a numpy array
+                #frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self.frame_height, self.frame_width, 3))
 
                 # Put the frame in the queue if space is available
                 if not self.frame_queue.full():
                     self.frame_queue.put(frame)
 
-                # # Convert the byte data to a numpy array
+                # Convert the byte data to a numpy array
                 # frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self.frame_height, self.frame_width, 3))
                 # self.frame_queue.put(frame)
 
-                label_data = self.sock.recv(self.label_size)
-                if not label_data:
-                    break
-                print("Received label data size:", len(label_data))
-                self.label_array = np.frombuffer(label_data, dtype=label_dtype)
-                
-                # Test
-                self.sock.sendall(label_data)
-                print("DATA SENT")
-                #self.senddata(label_array)
+                # label_data = self.sock.recv(self.label_size)
+                # if not label_data:
+                #     break
+                # print("Received label data size:", len(label_data))
+                # self.label_array = np.frombuffer(label_data, dtype=label_dtype)
                 
                 #print("Received label values:", self.label_array)
                 
@@ -126,14 +128,15 @@ class Client:
 
     def display_frame(self):
         while self.running:
-            try:
+            #try:
+            if True:
                 frame = self.frame_queue.get(timeout=1)
                 cv2.imshow('Received Frame', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     self.running = False
                     break
-            except queue.Empty:
-                continue
+            #except queue.Empty:
+            #    continue
 
         self.cleanup()
 
@@ -142,13 +145,13 @@ class Client:
 
         # Create and start the threads
         receive_thread = threading.Thread(target=self.receive_frame)
-        # display_thread = threading.Thread(target=self.display_frame)
+        display_thread = threading.Thread(target=self.display_frame)
 
         receive_thread.start()
-        # display_thread.start()
+        display_thread.start()
 
         receive_thread.join()
-        # display_thread.join()
+        display_thread.join()
 
     def cleanup(self):
         if self.sock:

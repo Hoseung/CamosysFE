@@ -84,6 +84,11 @@ class Server:
         packed_data = pack_data(image, label_values)
         self.conn.sendall(packed_data)
 
+    def receive_label(self, data_size=386):
+        label_data = self.conn.recv(data_size)
+        print("Received label data", label_data) 
+        
+
     def run(self):
         self.setup_socket()
         self.accept_connection()
@@ -92,6 +97,8 @@ class Server:
                 image = next(self.image_generator)
                 label_values = next(self.label_generator)
                 self.send_data(image, label_values)
+                #print("Let's get some data")
+                #self.receive_label()
         finally:
             self.cleanup()
 
