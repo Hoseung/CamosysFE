@@ -43,8 +43,8 @@ class CameraDataGenerator:
         if not ret:
             raise Exception("Could not read frame from camera")
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, (640, 480))
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         return frame
 
     def release(self):
@@ -54,7 +54,7 @@ def fake_label_data_generator():
     while True:
         distance = np.random.randint(1, 127, dtype=np.int8)
         eye_openness = np.float16(np.random.uniform(0, 1))
-        drowsiness = np.random.randint(0, 6, dtype=np.int8)
+        drowsiness = np.random.randint(0, 7, dtype=np.int8)
         phoneuse = bool(np.random.randint(0, 2))
         phone_use_conf = np.float16(np.random.uniform(0, 1))
         passenger = [bool(np.random.randint(0, 2)) for _ in range(5)]
