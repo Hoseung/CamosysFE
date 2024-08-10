@@ -1,34 +1,28 @@
-from typing import List, Tuple
 import math
 import numpy as np
-import yaml
+#import yaml
 import cv2
+
 
 class DistanceTriangle():
     """
     All calculations in meter unit.
     """
-    def __init__(self, cam_yml, 
+    def __init__(self, 
                  camera_height = 1.5, 
                  fov_v=91,
                  horizontal_fov_deg=166, 
                  image_width = 640,
                  image_height = 480, 
-                 camera_pitch = -24,
-                 load_intrinsics=True):
-        with open(cam_yml, 'r') as f:
-            self._yy = yaml.safe_load(f)
+                 camera_pitch = -24):
+        self.camera_matrix = np.array([[380.5828, 0., 327.04076],
+                                       [0., 381.61306, 245.22762],
+                                       [0., 0., 1.]])
+        self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
+        self.P = np.array([[379.9881, 0., 326.52974, 0.],
+                           [0., 380.81802, 244.71673, 0.],
+                           [0., 0., 1., 0.]])
         
-        self.camera_matrix = np.array(self._yy['camera_matrix']['data']).reshape(3,3)
-        self.dist_coeffs = np.array(self._yy['distortion_coefficients']['data'])
-        self.P = np.array(self._yy['projection_matrix']['data']).reshape((3, 4))
-        
-        if load_intrinsics:    
-            self.f_x = self.camera_matrix[0, 0]
-            self.f_y = self.camera_matrix[1, 1]
-            self.image_height = self._yy['image_height']
-            self.image_width = self._yy['image_width']
-
         self.fov_v = fov_v
         self.img_height = image_height
         self.img_width = image_width

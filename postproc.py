@@ -5,8 +5,7 @@ class PostProcessor:
     def __init__(self):
         self.camera_height=1.6
         camera_pitch=20
-        self.dt = DistanceTriangle("./ost2.yaml", 
-                      fov_v=90,
+        self.dt = DistanceTriangle(fov_v=90,
                       camera_height=self.camera_height,
                       camera_pitch=camera_pitch)
     
