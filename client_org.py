@@ -101,10 +101,6 @@ class Client:
                 if not self.frame_queue.full():
                     self.frame_queue.put(frame)
 
-                # # Convert the byte data to a numpy array
-                # frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self.frame_height, self.frame_width, 3))
-                # self.frame_queue.put(frame)
-
                 label_data = self.sock.recv(self.label_size)
                 if not label_data:
                     break

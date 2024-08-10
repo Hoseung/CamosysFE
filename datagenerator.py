@@ -2,6 +2,23 @@ import os
 from PIL import Image
 import numpy as np
 import cv2
+import struct
+
+data_format = { 
+    "distance": np.int16,
+    "eye_openness": np.int8,
+    "drowsiness": np.int8,
+    "phoneuse": np.int8,
+    "phone_use_conf": np.int8,
+    "height": np.uint8,
+    "passenger": np.int8, 
+    "face_landmarks_x": (np.uint16, 68),  # 68 elements of uint16
+    "face_landmarks_y": (np.uint16, 68),  # 68 elements of uint16
+    "body_keypoints3d": (np.uint16, 14, 3),  # 14 elements of uint16 in 3D
+    "body_keypoints2d": (np.uint16, 14, 2),  # 14 elements of uint16 in 3D
+    "body_keypoints2d_conf": (np.uint8, 14),  # 14 elements of uint16 in 3D
+    "face_bounding_box": (np.uint16, 4),  # 4 elements of uint16
+}
 
 class ImageDataGenerator:
     def __init__(self, directory):
@@ -32,8 +49,8 @@ class CameraDataGenerator:
         if not self.cap.isOpened():
             raise Exception("Could not open video device")
 
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     def __iter__(self):
         return self
@@ -44,33 +61,96 @@ class CameraDataGenerator:
             raise Exception("Could not read frame from camera")
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = cv2.resize(frame, (640, 480))
+        frame = cv2.resize(frame, (1920, 1080))
         return frame
 
     def release(self):
         self.cap.release()
 
-def fake_label_data_generator():
-    while True:
-        distance = np.random.randint(1, 127, dtype=np.int8)
-        eye_openness = np.float16(np.random.uniform(0, 1))
-        drowsiness = np.random.randint(0, 6, dtype=np.int8)
-        phoneuse = bool(np.random.randint(0, 2))
-        phone_use_conf = np.float16(np.random.uniform(0, 1))
-        passenger = [bool(np.random.randint(0, 2)) for _ in range(5)]
-        face_landmarks_x = np.random.randint(0, 640, 68, dtype=np.uint16)
-        face_landmarks_y = np.random.randint(0, 480, 68, dtype=np.uint16)
-        body_keypoints = [np.random.randint(50, 600, 14, dtype=np.uint16) for _ in range(3)]
-        joint_lengths = np.random.randint(5, 50, 10, dtype=np.int8)
-        face_bounding_box = np.random.randint(10, 200, 4, dtype=np.uint16)
-        face_bounding_box[2:] = face_bounding_box[:2] + np.random.randint(10, 20, 2, dtype=np.uint16)
 
-        label_values = (
-            distance, eye_openness, drowsiness, phoneuse, phone_use_conf, *passenger,
-            *face_landmarks_x, *face_landmarks_y,
-            *body_keypoints[0], *body_keypoints[1], *body_keypoints[2],
-            *joint_lengths,
-            *face_bounding_box
+class FakeLabelGenerator():
+    def __init__(self):
+        # Define the data format as a dictionary
+        self.data_format = data_format
+        self.type_map = {
+            np.int8: 'b',
+            np.uint8: 'B',
+            np.int16: 'h',
+            np.uint16: 'H',
+            np.int32: 'i',
+            np.uint32: 'I',
+            np.float32: 'f',
+            np.float64: 'd',
+        }
+        self.label_format = self.create_format_string(self.data_format)
+    
+    # Calculate the byte size directly from the data format dictionary
+    def calculate_byte_size(self, data_format):
+        total_size = 0
+        for key, value in self.data_format.items():
+            if isinstance(value, tuple):
+                dtype = value[0]
+                num_elements = np.prod(value[1:])  # Multiply all dimensions to get the total number of elements
+            else:
+                dtype = value
+                num_elements = 1
+            
+            element_size = np.dtype(dtype).itemsize  # Get the byte size of the data type
+            total_size += element_size * num_elements
+
+        return total_size
+
+    def create_format_string(self, data_format):
+        format_string = '='  # Start with '=' for standard size and alignment
+        for key, value in self.data_format.items():
+            if isinstance(value, tuple):  # Array of elements
+                dtype = value[0]
+                num_elements = np.prod(value[1:])  # Multiply all dimensions to get the total number of elements
+                format_string += f'{num_elements}{self.type_map[dtype]} '
+            else:  # Single element
+                dtype = value
+                format_string += f'{self.type_map[dtype]} '
+        return format_string.strip()
+        
+
+    def __iter__(self):
+        return self  # Return the iterator object itself
+
+    def __next__(self):
+        data = (
+            np.int16(np.random.randint(1, 127, dtype=self.data_format["distance"])),
+            np.int8(np.random.uniform(0, 1)), # eye_openness
+            np.int8(np.random.randint(0, 6, dtype=self.data_format["drowsiness"])),
+            np.int8(np.random.randint(0, 2, dtype=self.data_format["phoneuse"])),
+            np.int8(np.random.uniform(0, 1)), # phone_use_conf
+            np.uint8(np.random.randint(0, 200)), # height
+            np.int8(np.random.randint(0, 2)), # passenger
+            *np.random.randint(0, 640, self.data_format["face_landmarks_x"][1], dtype=self.data_format["face_landmarks_x"][0]),
+            *np.random.randint(0, 480, self.data_format["face_landmarks_y"][1], dtype=self.data_format["face_landmarks_y"][0]),
+            *np.random.randint(50, 600, self.data_format["body_keypoints3d"][1], dtype=self.data_format["body_keypoints3d"][0]),
+            *np.random.randint(50, 600, self.data_format["body_keypoints3d"][1], dtype=self.data_format["body_keypoints3d"][0]),
+            *np.random.randint(50, 600, self.data_format["body_keypoints3d"][1], dtype=self.data_format["body_keypoints3d"][0]),
+            *np.random.randint(50, 600, self.data_format["body_keypoints2d"][1], dtype=self.data_format["body_keypoints2d"][0]),
+            *np.random.randint(50, 600, self.data_format["body_keypoints2d"][1], dtype=self.data_format["body_keypoints2d"][0]),
+            *np.random.randint(0, 100, self.data_format["body_keypoints2d_conf"][1], dtype=self.data_format["body_keypoints2d"][0]),
+            *np.random.randint(10, 600, self.data_format["face_bounding_box"][1], dtype=self.data_format["face_bounding_box"][0]),
         )
 
-        yield label_values
+        return self.pack_data(data)
+            
+    def pack_data(self, label_values):
+        """
+        Pack image and label data for sending over a socket.
+
+        Args:
+        image (np.ndarray): Image data in GRAYSCALE format with 1080 x 1080 resolution.
+        label_values (tuple): Tuple containing the label values in the specified format.
+
+        Returns:
+        bytes: Packed data ready to be sent over a socket.
+        """
+
+        # Pack the label data
+        packed_labels = struct.pack(self.label_format, *label_values)
+
+        return packed_labels
