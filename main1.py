@@ -9,8 +9,8 @@ import queue
 import threading
 import cv2
 from datagenerator import CameraDataGenerator
-from algo import Postprocess
-from ruler import DistanceTriangle, take_avg_or_larger
+from postproc import PostProcessor
+import time
 
 def my_exception_hook(exctype, value, traceback):
     # Print the error and traceback
@@ -31,7 +31,7 @@ class MainWindow(QWidget):
         super(QWidget, self).__init__(*args, **kwargs)
         self.client = client
         self.use = use
-        self.post = Postprocess()
+        # self.post = Postprocess()
 
         self.setWindowTitle("Ti DEMO")
         self.setGeometry(100, 100, 1920, 1080)
@@ -341,17 +341,19 @@ class MainWindow(QWidget):
             frame_height_resize = 750
 
             frame = self.client.frame_queue.get()
-            frame_width_resize_ratio = frame_width_resize / self.client.frame_width
-            frame_height_resize_ratio = frame_height_resize / self.client.frame_height
-            frame = cv2.resize(frame, (frame_width_resize, frame_height_resize))
+            if frame_width_resize != frame.shape[1] or frame_height_resize != frame.shape[0]:
+                frame_width_resize_ratio = frame_width_resize / self.client.frame_width
+                frame_height_resize_ratio = frame_height_resize / self.client.frame_height
+                frame = cv2.resize(frame, (frame_width_resize, frame_height_resize))
+            
             label_data = self.client.label_data_queue.get()
 
-            h, w, ch = frame.shape
-            bytes_per_line = ch * w
+            h, w = frame.shape
+            bytes_per_line = w
 
             # body_keypoints
-            body_keypoints_x = np.round(label_data["body_keypoints_x"][0] * frame_width_resize_ratio).astype(int)
-            body_keypoints_y = np.round(label_data["body_keypoints_y"][0] * frame_height_resize_ratio).astype(int)
+            body_keypoints_x = np.round(label_data["body_keypoints2d"][0][0] * frame_width_resize_ratio).astype(int)
+            body_keypoints_y = np.round(label_data["body_keypoints2d"][0][1] * frame_height_resize_ratio).astype(int)
             # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
 
             color = (24, 24, 244)  # BGR
@@ -392,7 +394,8 @@ class MainWindow(QWidget):
             # if len(face_bounding_box_x) > 1:
             #     cv2.line(frame, (face_bounding_box_x[-1], face_bounding_box_y[-1]), (face_bounding_box_x[0], face_bounding_box_y[0]), color, 5)
 
-            qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+            # qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+            qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_Grayscale8).rgbSwapped()
 
             pixmap = QPixmap.fromImage(qimg)
             self.img_lbl.setPixmap(pixmap)
@@ -408,46 +411,46 @@ class MainWindow(QWidget):
             self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0] else "Off"}.png'))
             self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0] * 100, 2)) + "%)")
 
-            self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0][0] else "Off"}.png'))
+            self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0] == 1 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
                 f"""
-                {"color: rgb(17, 94, 255);" if label_data["passenger"][0][0] else "color: rgb(105, 105, 105);"}
+                {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 1 else "color: rgb(105, 105, 105);"}
                 font-size: 20px;
                 font-weight: bold;
                 """
             )
 
-            self.lbl_img_3_3.setPixmap(QPixmap(f'icon/Property 1=Age 1~6, Selected={"On" if label_data["passenger"][0][1] else "Off"}.png'))
+            self.lbl_img_3_3.setPixmap(QPixmap(f'icon/Property 1=Age 1~6, Selected={"On" if label_data["passenger"][0] == 2 else "Off"}.png'))
             self.lbl_txt_3_3.setStyleSheet(
                 f"""
-                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0][1] else "color: rgb(105, 105, 105);"}
+                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 2 else "color: rgb(105, 105, 105);"}
                             font-size: 20px;
                             font-weight: bold;
                             """
             )
 
-            self.lbl_img_3_4.setPixmap(QPixmap(f'icon/Property 1=AF05, Selected={"On" if label_data["passenger"][0][2] else "Off"}.png'))
+            self.lbl_img_3_4.setPixmap(QPixmap(f'icon/Property 1=AF05, Selected={"On" if label_data["passenger"][0] == 3 else "Off"}.png'))
             self.lbl_txt_3_4.setStyleSheet(
                 f"""
-                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0][2] else "color: rgb(105, 105, 105);"}
+                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 3 else "color: rgb(105, 105, 105);"}
                             font-size: 20px;
                             font-weight: bold;
                             """
             )
 
-            self.lbl_img_3_5.setPixmap(QPixmap(f'icon/Property 1=AM50, Selected={"On" if label_data["passenger"][0][3] else "Off"}.png'))
+            self.lbl_img_3_5.setPixmap(QPixmap(f'icon/Property 1=AM50, Selected={"On" if label_data["passenger"][0] == 4 else "Off"}.png'))
             self.lbl_txt_3_5.setStyleSheet(
                 f"""
-                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0][3] else "color: rgb(105, 105, 105);"}
+                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 4 else "color: rgb(105, 105, 105);"}
                             font-size: 20px;
                             font-weight: bold;
                             """
             )
 
-            self.lbl_img_3_6.setPixmap(QPixmap(f'icon/Property 1=AM95, Selected={"On" if label_data["passenger"][0][4] else "Off"}.png'))
+            self.lbl_img_3_6.setPixmap(QPixmap(f'icon/Property 1=AM95, Selected={"On" if label_data["passenger"][0] == 5 else "Off"}.png'))
             self.lbl_txt_3_6.setStyleSheet(
                 f"""
-                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0][4] else "color: rgb(105, 105, 105);"}
+                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 5 else "color: rgb(105, 105, 105);"}
                             font-size: 20px;
                             font-weight: bold;
                             """
@@ -483,7 +486,7 @@ class MainWindow(QWidget):
 
 
 class Client:
-    def __init__(self, server_ip, port=65432, frame_width=640, frame_height=480):
+    def __init__(self, server_ip, port=65432, frame_width=1080, frame_height=1080):
         self.server_address = (server_ip, port)
         self.sock = None
         self.frame_width = frame_width
@@ -491,51 +494,29 @@ class Client:
         self.frame_queue = queue.Queue(maxsize=10)
         self.label_data_queue = queue.Queue(maxsize=10)
         self.label_size = struct.calcsize(
-            '=b e b ? e ? ? ? ? ? ' + '68H 68H ' + '14H 14H 14H ' + '10b ' + '4H')
+            '=h b b b b b B 68H 68H 42H 28H 14B 4H')
         self.running = True
-        self.label_array = None
         
-        self.image_generator = CameraDataGenerator()
-        
-        camera_height=1.6,
-        camera_pitch=20
-        self.dt = DistanceTriangle("./ost2.yaml", 
-                      fov_v=90,
-                      camera_height=camera_height,
-                      camera_pitch=camera_pitch)
-    
-        self.cam_loc = np.array([0,0,self.dt.camera_height])
-    
-        # 2d keypoint smoothing parameter
-        self.alpha_2d = 0.4
-        self.smoothed_keypoints_2d = None
-
-        # upper body running mean
-        self.alpha = 0.01
-        self.cnt_initial = 100
-                
-        self.foot_ind3d = [3,6]
-        self.area_lmin = 180
-        self.area_rmax = 460
+        self.image_generator = CameraDataGenerator(camera_index=2, 
+                                                   crop=(0,1080, 420, 1500))
+        self.post_processor = PostProcessor()
+        self.postproc_gen = None
         
         self.label_dtype = np.dtype([
-            ('distance', np.int8),
-            ('eye_openness', np.float16),
-            ('drowsiness', np.int8),
-            ('phoneuse', np.bool_),
-            ('phone_use_conf', np.float16),
-            ('passenger', np.bool_, (5,)),
-            ('face_landmarks_x', np.uint16, (68,)),
-            ('face_landmarks_y', np.uint16, (68,)),
-            ('body_keypoints_x', np.uint16, (15,)),
-            ('body_keypoints_y', np.uint16, (15,)),
-            ('body_keypoints_z', np.uint16, (15,)),
-            ('joint_lengths', np.int8, (10,)),
-            ('face_bounding_box', np.uint16, (4,)),
-            ('body_key2d_x', np.uint16, (13,)),
-            ('body_key2d_y', np.uint16, (13,)),
-            ('body_key2d_conf', np.float, (13,)),
-        ])
+            ("distance", np.int16),
+            ("eye_openness", np.int8),
+            ("drowsiness", np.int8),
+            ("phoneuse", np.int8),
+            ("phone_use_conf", np.int8),
+            ("height", np.uint8), 
+            ("passenger", np.int8), 
+            ("face_landmarks_x", np.uint16, (68)),  # 68 elements of uint16
+            ("face_landmarks_y", np.uint16, (68)),  # 68 elements of uint16
+            ("body_keypoints3d", np.uint16, (14, 3)),  # 14 elements of uint16 in 3D
+            ("body_keypoints2d", np.uint16, (14, 2)),  # 14 elements of uint16 in 3D
+            ("body_keypoints2d_conf", np.uint8, (14,)),  # 14 elements of uint16 in 3D
+            ("face_bounding_box", np.uint16, (4,))# 4 elements of uint16
+            ])
 
     def setup_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -560,166 +541,52 @@ class Client:
             self.sock.close()
 
     def receive_frame(self):
-        initial_guess = []
-        running_avg = None
-        z_dist_foot = 1
-        too_close = 0
-        i=0
-        scale3d = 1.0
-        no_person = 0
-        
-        heights = []
-        takes = []
         while self.running:
-            try:
+            # try:
                 frame = next(self.image_generator)
                 self.conn.sendall(frame.tobytes())
             
-                # frame_size_data = self.sock.recv(4)
-                # if not frame_size_data:
-                #     break
-                # frame_size = struct.unpack('!I', frame_size_data)[0]
-                # frame_data = b''
-                # while len(frame_data) < frame_size:
-                #     packet = self.sock.recv(frame_size - len(frame_data))
-                #     if not packet:
-                #         break
-                #     frame_data += packet
+                label_data = self.conn.recv(self.label_size)
+                # print("Label data received")
+                if not label_data:
+                    break
+                # print("Label data size:", len(label_data))
+                
+                label_array = np.frombuffer(label_data, dtype=self.label_dtype).copy()
 
-                # if len(frame_data) != frame_size:
-                #     break
+                # Consider the main person.
+                # Initialize the generator if it's the first run
+                if self.postproc_gen is None:
+                    self.postproc_gen = self.post_processor.run(label_array)
+                        # Prime the generator (advance to the first yield)
+                    next(self.postproc_gen)
+                    dist_neck, body_size = 0,0
+                else:
+                    # Get the next result from the generator
+                    self.postproc_gen.send(label_array)
 
-                # frame = np.frombuffer(frame_data, dtype=np.uint8).reshape((self.frame_height, self.frame_width, 3))
-
+                    print(dist_neck)  # Handle the output from the generator
+                
+                ### Finally update the view
                 if not self.frame_queue.full():
                     self.frame_queue.put(frame)
 
-                label_data = self.sock.recv(self.label_size)
-                if not label_data:
-                    break
-
-                self.label_array = np.frombuffer(label_data, dtype=self.label_dtype)
-                # print("Received label values:", self.label_array)
-                # for name in self.label_array.dtype.names:
-                #     print(name, self.label_array[name])
-
-                box = self.label_array["face_bounding_box"][0]
-                keypoints_2d = np.column_stack((self.label_array["body_keypoints_x"],
-                                               self.label_array["body_keypoints_y"],
-                                               self.label_array["body_keypoints_conf"]))
-                key3d = np.column_stack((self.label_array["body_keypoints_x"],
-                                         self.label_array["body_keypoints_y"],
-                                         self.label_array["body_keypoints_z"]))
-                
-                i += 1
-                if box is not None and box[0] > self.area_lmin and box[3] < self.area_rmax:
-
-                    # smoothing 2d keypoints
-                    if smoothed_keypoints_2d is None:
-                        smoothed_keypoints_2d = keypoints_2d[:,:2]
-                    
-                    else:
-                        smoothed_keypoints_2d = self.alpha_2d * keypoints_2d[:,:2] + (1 - self.alpha_2d) * smoothed_keypoints_2d
-                        keypoints_2d[:,:2] = smoothed_keypoints_2d
-                    
-                    # full body visible?
-                    if keypoints_2d[0,2] > 90 and keypoints_2d[11,2] > 90 and keypoints_2d[12,2] > 90:
-                    
-                        height, dist = self.dt.height_taken(smoothed_keypoints_2d, take_frac = 0.88)
-                        if dist:
-                            #takes.append(True)
-                            cnt += 1
-                            if cnt > self.cnt_initial:
-                                old_avg = running_avg
-                                #print(height, running_avg, cnt)
-                                running_avg += (height - running_avg) / cnt
-
-                                if np.abs(height - running_avg) <= 0.05 * running_avg:
-                                    running_avg = self.alpha * height + (1 - self.alpha) * running_avg
-                                
-                                # Update 3D Scale
-                                l_head_to_foot = np.linalg.norm(key3d[8]-key3d[3])
-                                r_head_to_foot = np.linalg.norm(key3d[8]-key3d[6])
-                                head_to_foot3d = take_avg_or_larger(l_head_to_foot, r_head_to_foot)
-                                scale3d = running_avg / head_to_foot3d
-                            elif cnt < self.cnt_initial: 
-                                initial_guess.append(height)
-                            elif cnt == self.cnt_initial: 
-                                running_avg = np.percentile(initial_guess, 90)
-                                #running_std = np.std(initial_guess)
-                                # print("Initial guess", running_avg*100)
-                                
-                            z_dist_foot = dist
-                        else:
-                            continue
-                            #print("Unreliable Height measurement222")    
-                        # scale
-                        key3d *= scale3d
-
-                        # translation``
-                        # print(f"z_dist_to_foot {z_dist_foot:.2f}")
-                        key3d[:,2] += (z_dist_foot - key3d[self.foot_ind3d[self.dt.foot_ind],2])
-                    
-                    if cnt % 100 == 1 and running_avg is not None:
-                        self.label_array['passenger'][0][:] = 0
-                        if running_avg < 1.58:
-                            self.label_array['passenger'][0][2] = 1
-                            # print("Body size: AF05")
-                            # print(f"Running Average: {running_avg*100:.1f} cm")
-                        elif running_avg < 1.85:
-                            # print("Body size: AM50")
-                            self.label_array['passenger'][0][3] = 1
-                            # print(f"Running Average: {running_avg*100:.1f} cm")
-                        elif running_avg < 2.05:
-                            self.label_array['passenger'][0][4] = 1
-                            # print("Body size: AM95")
-                            # print(f"Running Average: {running_avg*100:.1f} cm")
-                        else:
-                            self.label_array['passenger'][0][:] = 0
-                            # print("Body size: TOO BIG. Check the measurement!")
-                            # print(f"Running Average: {running_avg*100:.1f} cm")
-                    # Distance between wheel and head ([4])
-                    # But, I will use [3], neck. 
-                    # Beacuse when head is too close, head is not seen in the image
-                    
-                    # dist_neck to camera_root
-                    if cnt > self.cnt_initial and cnt % 10 == 1:
-                        dist_neck = np.linalg.norm(key3d[7] - self.cam_loc) 
-                        print(f"Distance to camera: {dist_neck:.3f} m")
-                        if dist_neck < 0.5:
-                            too_close = min(50, too_close + 1)
-                        else:
-                            too_close = max(0, too_close - 1)
-                        if too_close > 0.2:
-                            print("Too close to the Camera!")
-                    
-                    #Or, if upper body is leaning towards the wheel by more than XX degrees
-                
-                else: # when no person is detected
-                    no_person += 1
-                    if no_person > 20:
-                        print("No person detected!")
-                        cnt = 0
-                        too_close = 0 
-                        running_avg = None
-                        smoothed_keypoints_2d = None
-                        no_person = 0
-                        initial_guess = []
-
-                self.label_array['distance'][0] = int(dist_neck * 100)
+                label_array['distance'] = np.int16(dist_neck * 100)
+                print("Distance:", label_array['distance'])
                 if not self.label_data_queue.full():
-                    self.label_data_queue.put(self.label_array)
+                    self.label_data_queue.put(label_array)
                 
 
-            except Exception as e:
-                print(f"Error receiving data: {e}")
-                break
+            # except Exception as e:
+            #     print(f"Error receiving data: {e}")
+            #     break
 
         self.cleanup()
 
     def cleanup(self):
         if self.sock:
             self.sock.close()
+        self.postproc_gen = None
         self.running = False
 
 
@@ -731,8 +598,8 @@ def main():
                     background-color: rgb(30, 30, 30);
                 }
                 """)
-
-    client = Client(server_ip='169.254.31.226')  # '169.254.244.73'
+    host_ip = ['169.254.244.73','169.254.31.226'][0]
+    client = Client(server_ip = host_ip) # 
     client.setup_socket()
     client.accept_connection()
 

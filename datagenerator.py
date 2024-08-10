@@ -4,12 +4,13 @@ import numpy as np
 import cv2
 
 class ImageDataGenerator:
-    def __init__(self, directory):
+    def __init__(self, directory, crop=(56, 1024, 460, 1460)):
         self.directory = directory
         self.files = [f for f in os.listdir(directory) if f.endswith('.png')]
         if not self.files:
             raise Exception("No images found in the directory")
         self.index = 0
+        self.crop = crop
 
     def __iter__(self):
         return self
@@ -20,20 +21,25 @@ class ImageDataGenerator:
 
         image_path = os.path.join(self.directory, self.files[self.index])
         image = Image.open(image_path)
-        image = image.resize((640, 480))
+        if self.crop:
+            image = image[self.crop[0]:self.crop[1], 
+                          self.crop[2]:self.crop[3]]
+        else:
+            image = image.resize((640, 480))
         image_data = np.array(image)
         self.index += 1
 
         return image_data
 
 class CameraDataGenerator:
-    def __init__(self, camera_index=0):
+    def __init__(self, camera_index=0, crop=False):
         self.cap = cv2.VideoCapture(camera_index)
         if not self.cap.isOpened():
             raise Exception("Could not open video device")
 
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.crop = crop
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     def __iter__(self):
         return self
@@ -42,9 +48,12 @@ class CameraDataGenerator:
         ret, frame = self.cap.read()
         if not ret:
             raise Exception("Could not read frame from camera")
+        else:
+            frame = frame[self.crop[0]:self.crop[1],self.crop[2]:self.crop[3]]
+            # cv2.resize(frame, (1024,1024))
 
-        frame = cv2.resize(frame, (640, 480))
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        print("frame shape", frame.shape)
         return frame
 
     def release(self):
