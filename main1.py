@@ -3,14 +3,16 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import numpy as np
-import socket
-import struct
-import queue
 import threading
 import cv2
-from datagenerator import CameraDataGenerator
-from postproc import PostProcessor
-import time
+from client import Client
+
+# import socket
+# import struct
+# import queue
+# from datagenerator import CameraDataGenerator
+# from postproc import PostProcessor
+# import time
 
 def my_exception_hook(exctype, value, traceback):
     # Print the error and traceback
@@ -25,6 +27,13 @@ sys._excepthook = sys.excepthook
 # Set the exception hook to our wrapping function
 sys.excepthook = my_exception_hook
 
+
+connections_2d = [
+    (0, 2), (0, 1), (2, 4), (4, 6),
+    (1, 3), (3, 5), (2, 8), (1, 2),
+    (1, 7), (7, 8), (8, 10), (10, 12),
+    (7, 9), (9, 11)
+]
 
 class MainWindow(QWidget):
     def __init__(self, client, use, *args, **kwargs):
@@ -352,22 +361,36 @@ class MainWindow(QWidget):
             bytes_per_line = w
 
             # body_keypoints
-            body_keypoints_x = np.round(label_data["body_keypoints2d"][0][0] * frame_width_resize_ratio).astype(int)
-            body_keypoints_y = np.round(label_data["body_keypoints2d"][0][1] * frame_height_resize_ratio).astype(int)
+            body_keypoints_x = np.round(label_data["body_keypoints2d"][0][:,0] * frame_width_resize_ratio).astype(int)
+            body_keypoints_y = np.round(label_data["body_keypoints2d"][0][:,1] * frame_height_resize_ratio).astype(int)
             # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
 
+            body_keypoints_3dx = label_data["body_keypoints3d"][0][:,0]
+            body_keypoints_3dy = label_data["body_keypoints3d"][0][:,1]
+            body_keypoints_3dz = label_data["body_keypoints3d"][0][:,1]
+            
             color = (24, 24, 244)  # BGR
             color2 = (46, 234, 255)
             radius = 5
 
+            for connection in connections_2d:
+                x1, y1 = body_keypoints_x[connection[0]], body_keypoints_y[connection[0]]
+                x2, y2 = body_keypoints_x[connection[1]], body_keypoints_y[connection[1]]
+                cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+            # Draw the keypoints
+            # for x, y in zip(body_keypoints_x, body_keypoints_y):
+            #     cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)
+                
             for i in range(len(body_keypoints_x) - 1):
-                cv2.circle(frame, (body_keypoints_x[i], body_keypoints_y[i]), radius, color, -1, cv2.LINE_AA)
-                cv2.line(frame, (body_keypoints_x[i], body_keypoints_y[i]), (body_keypoints_x[i + 1], body_keypoints_y[i + 1]), color2, 2)
-                # cv2.putText(frame, f"{body_keypoints_x[i]:.2f}", (body_keypoints_x[i], body_keypoints_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.circle(frame, (body_keypoints_x[i], body_keypoints_y[i]), radius, color2, -1, cv2.LINE_AA)
+                cv2.putText(frame, f"{body_keypoints_3dx[i]}  {body_keypoints_3dy[i]}  {body_keypoints_3dz[i]}", 
+                            (body_keypoints_x[i], body_keypoints_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                # cv2.putText(frame, f"{body_keypoints_z[i]:.2f}", (body_keypoints_x[i], body_keypoints_y[i]+10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
                 # cv2.putText(frame, f"{body_keypoints_z[i]:.2f}", (body_keypoints_x[i], body_keypoints_y[i]+10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
             # 끝점과 시작점을 이음
-            if len(body_keypoints_x) > 1:
-                cv2.line(frame, (body_keypoints_x[-1], body_keypoints_y[-1]), (body_keypoints_x[0], body_keypoints_y[0]), color2, 2)
+            # if len(body_keypoints_x) > 1:
+            #     cv2.line(frame, (body_keypoints_x[-1], body_keypoints_y[-1]), (body_keypoints_x[0], body_keypoints_y[0]), color2, 2)
 
             # face_landmarks
             face_landmarks_x = np.round(label_data["face_landmarks_x"][0] * frame_width_resize_ratio).astype(int)
@@ -482,113 +505,6 @@ class MainWindow(QWidget):
                 """
             )
             flag[0] = 0
-
-
-
-class Client:
-    def __init__(self, server_ip, port=65432, frame_width=1080, frame_height=1080):
-        self.server_address = (server_ip, port)
-        self.sock = None
-        self.frame_width = frame_width
-        self.frame_height = frame_height
-        self.frame_queue = queue.Queue(maxsize=10)
-        self.label_data_queue = queue.Queue(maxsize=10)
-        self.label_size = struct.calcsize(
-            '=h b b b b b B 68H 68H 42H 28H 14B 4H')
-        self.running = True
-        
-        self.image_generator = CameraDataGenerator(camera_index=2, 
-                                                   crop=(0,1080, 420, 1500))
-        self.post_processor = PostProcessor()
-        self.postproc_gen = None
-        
-        self.label_dtype = np.dtype([
-            ("distance", np.int16),
-            ("eye_openness", np.int8),
-            ("drowsiness", np.int8),
-            ("phoneuse", np.int8),
-            ("phone_use_conf", np.int8),
-            ("height", np.uint8), 
-            ("passenger", np.int8), 
-            ("face_landmarks_x", np.uint16, (68)),  # 68 elements of uint16
-            ("face_landmarks_y", np.uint16, (68)),  # 68 elements of uint16
-            ("body_keypoints3d", np.uint16, (14, 3)),  # 14 elements of uint16 in 3D
-            ("body_keypoints2d", np.uint16, (14, 2)),  # 14 elements of uint16 in 3D
-            ("body_keypoints2d_conf", np.uint8, (14,)),  # 14 elements of uint16 in 3D
-            ("face_bounding_box", np.uint16, (4,))# 4 elements of uint16
-            ])
-
-    def setup_socket(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2 ** 20)
-        self.sock.bind(self.server_address)
-        self.sock.listen(1)
-        print("Server listening on {}:{}".format(*self.server_address)) 
-        # self.sock.connect(self.server_address)
-        # print("Connected to server at {}:{}".format(*self.server_address))
-
-    def accept_connection(self):
-        self.conn, addr = self.sock.accept()
-        print("Connection from", addr)
-        self.conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        self.conn.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2**20)
-
-    def cleanup(self):
-        if self.conn:
-            self.conn.close()
-        if self.sock:
-            self.sock.close()
-
-    def receive_frame(self):
-        while self.running:
-            # try:
-                frame = next(self.image_generator)
-                self.conn.sendall(frame.tobytes())
-            
-                label_data = self.conn.recv(self.label_size)
-                # print("Label data received")
-                if not label_data:
-                    break
-                # print("Label data size:", len(label_data))
-                
-                label_array = np.frombuffer(label_data, dtype=self.label_dtype).copy()
-
-                # Consider the main person.
-                # Initialize the generator if it's the first run
-                if self.postproc_gen is None:
-                    self.postproc_gen = self.post_processor.run(label_array)
-                        # Prime the generator (advance to the first yield)
-                    next(self.postproc_gen)
-                    dist_neck, body_size = 0,0
-                else:
-                    # Get the next result from the generator
-                    self.postproc_gen.send(label_array)
-
-                    print(dist_neck)  # Handle the output from the generator
-                
-                ### Finally update the view
-                if not self.frame_queue.full():
-                    self.frame_queue.put(frame)
-
-                label_array['distance'] = np.int16(dist_neck * 100)
-                print("Distance:", label_array['distance'])
-                if not self.label_data_queue.full():
-                    self.label_data_queue.put(label_array)
-                
-
-            # except Exception as e:
-            #     print(f"Error receiving data: {e}")
-            #     break
-
-        self.cleanup()
-
-    def cleanup(self):
-        if self.sock:
-            self.sock.close()
-        self.postproc_gen = None
-        self.running = False
-
 
 def main():
     app = QApplication(sys.argv)
