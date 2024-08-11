@@ -348,7 +348,8 @@ class MainWindow(QWidget):
             label_data = self.client.label_data_queue.get()
 
             h, w = frame.shape
-            bytes_per_line = w
+            bytes_per_line = w * 3
+            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             
             # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
             # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
@@ -392,8 +393,8 @@ class MainWindow(QWidget):
                             (bbox[3] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
             cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
 
-            #qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
-            qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_Grayscale8).rgbSwapped()
+            qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+            #qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_Grayscale8).rgbSwapped()
 
             pixmap = QPixmap.fromImage(qimg)
             self.img_lbl.setPixmap(pixmap)
