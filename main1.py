@@ -160,9 +160,6 @@ class MainWindow(QWidget):
             """
         )
         flg2_1_2 = [1]
-        # self.timer2_1_2 = QTimer()
-        # self.timer2_1_2.timeout.connect(lambda: self.switch_image(self.lbl_img_2_1_2, lbl_txt_2_1_2, img2_1_2_1, img2_1_2_2, flg2_1_2))
-        # self.timer2_1_2.start(1000)
         vbox2_1_2.addWidget(lbl_txt_2_1_2, stretch=1)
         vbox2_1.addLayout(vbox2_1_2, stretch=3)
 
@@ -200,9 +197,6 @@ class MainWindow(QWidget):
             """
         )
         flg3_1 = [1]
-        # self.timer3_1 = QTimer()
-        # self.timer3_1.timeout.connect(lambda: self.switch_image(self.lbl_img_3_1, self.lbl_txt_3_1, img3_1_1, img3_1_2, flg3_1))
-        # self.timer3_1.start(1000)
         vbox3_1.addWidget(self.lbl_txt_3_1, stretch=1)
         hbox3.addLayout(vbox3_1, stretch=10)
 
@@ -225,9 +219,6 @@ class MainWindow(QWidget):
             """
         )
         flg3_2 = [1]
-        # self.timer3_2 = QTimer()
-        # self.timer3_2.timeout.connect(lambda: self.switch_image(self.lbl_img_3_2, self.lbl_txt_3_2, img3_2_1, img3_2_2, flg3_2))
-        # self.timer3_2.start(1000)
         vbox3_2.addWidget(self.lbl_txt_3_2, stretch=1)
         hbox3.addLayout(vbox3_2, stretch=9)
 
@@ -361,36 +352,31 @@ class MainWindow(QWidget):
             bytes_per_line = w
 
             # body_keypoints
-            body_keypoints_x = np.round(label_data["body_keypoints2d"][0][:,0] * frame_width_resize_ratio).astype(int)
-            body_keypoints_y = np.round(label_data["body_keypoints2d"][0][:,1] * frame_height_resize_ratio).astype(int)
+            bk2d_x = np.round(label_data["body_keypoints2d"][0][0] * frame_width_resize_ratio).astype(int)
+            bk2d_y = np.round(label_data["body_keypoints2d"][0][1] * frame_height_resize_ratio).astype(int)
             # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
 
-            body_keypoints_3dx = label_data["body_keypoints3d"][0][:,0]
-            body_keypoints_3dy = label_data["body_keypoints3d"][0][:,1]
-            body_keypoints_3dz = label_data["body_keypoints3d"][0][:,1]
+            bk_3dx = label_data["body_keypoints3d"][0][0]
+            bk_3dy = label_data["body_keypoints3d"][0][1]
+            bk_3dz = label_data["body_keypoints3d"][0][2]
             
             color = (24, 24, 244)  # BGR
             color2 = (46, 234, 255)
             radius = 5
 
             for connection in connections_2d:
-                x1, y1 = body_keypoints_x[connection[0]], body_keypoints_y[connection[0]]
-                x2, y2 = body_keypoints_x[connection[1]], body_keypoints_y[connection[1]]
-                cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                #x1, y1 = body_keypoints_x[connection[0]], body_keypoints_y[connection[0]]
+                #x2, y2 = body_keypoints_x[connection[1]], body_keypoints_y[connection[1]]
+                # cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
+                                (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
+                                 (0, 255, 0), 2)
 
             # Draw the keypoints
-            # for x, y in zip(body_keypoints_x, body_keypoints_y):
-            #     cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)
-                
-            for i in range(len(body_keypoints_x) - 1):
-                cv2.circle(frame, (body_keypoints_x[i], body_keypoints_y[i]), radius, color2, -1, cv2.LINE_AA)
-                cv2.putText(frame, f"{body_keypoints_3dx[i]}  {body_keypoints_3dy[i]}  {body_keypoints_3dz[i]}", 
-                            (body_keypoints_x[i], body_keypoints_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-                # cv2.putText(frame, f"{body_keypoints_z[i]:.2f}", (body_keypoints_x[i], body_keypoints_y[i]+10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-                # cv2.putText(frame, f"{body_keypoints_z[i]:.2f}", (body_keypoints_x[i], body_keypoints_y[i]+10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-            # 끝점과 시작점을 이음
-            # if len(body_keypoints_x) > 1:
-            #     cv2.line(frame, (body_keypoints_x[-1], body_keypoints_y[-1]), (body_keypoints_x[0], body_keypoints_y[0]), color2, 2)
+            for i in range(len(bk2d_x) - 1):
+                cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
+                cv2.putText(frame, f"{bk_3dx[i]}  {bk_3dy[i]}  {bk_3dz[i]}", 
+                            (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
             # face_landmarks
             face_landmarks_x = np.round(label_data["face_landmarks_x"][0] * frame_width_resize_ratio).astype(int)
@@ -402,20 +388,11 @@ class MainWindow(QWidget):
             for i in range(len(face_landmarks_x) - 1):
                 cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
 
-            #print("face bounding box", label_data["face_bounding_box"])
-            # face_bounding_box
-            face_bounding_box_x = np.round(label_data["face_bounding_box"][0][0] * frame_width_resize_ratio).astype(int)
-            face_bounding_box_y = np.round(label_data["face_bounding_box"][0][1] * frame_height_resize_ratio).astype(int)
-            #
-            # color = (46, 234, 255)
-            #
-            cv2.rectangle(frame, np.round(label_data["face_bounding_box"][0][:2]), 
-                                 np.round(label_data["face_bounding_box"][0][2:]), color, 5)
-            # for i in range(len(face_bounding_box_x) - 1):
-            #     cv2.line(frame, (face_bounding_box_x[i], face_bounding_box_y[i]), (face_bounding_box_x[i + 1], face_bounding_box_y[i + 1]), color, 5)
-            # # 끝점과 시작점을 이음
-            # if len(face_bounding_box_x) > 1:
-            #     cv2.line(frame, (face_bounding_box_x[-1], face_bounding_box_y[-1]), (face_bounding_box_x[0], face_bounding_box_y[0]), color, 5)
+            ptl = np.array([label_data["face_bounding_box"][0][0] * frame_width_resize_ratio,
+                            label_data["face_bounding_box"][0][1] * frame_height_resize_ratio]).astype(int)
+            pbr = np.array([label_data["face_bounding_box"][0][2] * frame_width_resize_ratio,
+                            label_data["face_bounding_box"][0][3] * frame_height_resize_ratio]).astype(int)
+            cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
 
             # qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
             qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_Grayscale8).rgbSwapped()
@@ -423,10 +400,6 @@ class MainWindow(QWidget):
             pixmap = QPixmap.fromImage(qimg)
             self.img_lbl.setPixmap(pixmap)
 
-
-            # for name in label_data.dtype.names:
-            #     print(name, label_data[name])
-            # print(label_data["distance"], type(label_data["distance"]))
             self.lbl_txt_2_1_1_2.setText(str(label_data["distance"][0]))
             self.lbl_txt_2_1_1_4.setText(str(round(label_data["eye_openness"][0] * 100, 2)) + "%")
             # bodysize

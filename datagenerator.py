@@ -50,7 +50,7 @@ class CameraDataGenerator:
             raise Exception("Could not read frame from camera")
         else:
             frame = frame[self.crop[0]:self.crop[1],self.crop[2]:self.crop[3]]
-            # cv2.resize(frame, (1024,1024))
+            #cv2.resize(frame, (1024,1024))
 
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         print("frame shape", frame.shape)

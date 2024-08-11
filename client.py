@@ -1,3 +1,4 @@
+import pickle
 import queue
 from datagenerator import CameraDataGenerator
 from postproc import PostProcessor
@@ -5,7 +6,7 @@ import socket
 import struct
 import numpy as np
 class Client:
-    def __init__(self, server_ip, port=65432, frame_width=1080, frame_height=1080):
+    def __init__(self, server_ip, port=65432, frame_width=1024, frame_height=1024):
         self.server_address = (server_ip, port)
         self.sock = None
         self.frame_width = frame_width
@@ -13,11 +14,11 @@ class Client:
         self.frame_queue = queue.Queue(maxsize=10)
         self.label_data_queue = queue.Queue(maxsize=10)
         self.label_size = struct.calcsize(
-            '=h b b b b b B 68H 68H 42H 28H 14B 4H')
+            '=h b b b b B b 68H 68H 15H 15H 15H 13H 13H 13B 4H')
         self.running = True
         
         self.image_generator = CameraDataGenerator(camera_index=2, 
-                                                   crop=(0,1080, 420, 1500))
+                                                   crop=(0,1024, 448, 1472))
         self.post_processor = PostProcessor()
         self.postproc_gen = None
         
@@ -31,9 +32,9 @@ class Client:
             ("passenger", np.int8), 
             ("face_landmarks_x", np.uint16, (68)),  # 68 elements of uint16
             ("face_landmarks_y", np.uint16, (68)),  # 68 elements of uint16
-            ("body_keypoints3d", np.uint16, (14, 3)),  # 14 elements of uint16 in 3D
-            ("body_keypoints2d", np.uint16, (14, 2)),  # 14 elements of uint16 in 2D
-            ("body_keypoints2d_conf", np.uint8, (14,)),  # 14 elements of uint16 in 1D
+            ("body_keypoints3d", np.uint16, (3, 15)),  # 15 elements of uint16 in 3D
+            ("body_keypoints2d", np.uint16, (2, 13)),  # 13 elements of uint16 in 2D
+            ("body_keypoints2d_conf", np.uint8, (13,)),  # 13 elements of uint16 in 1D
             ("face_bounding_box", np.uint16, (4,))# 4 elements of uint16
             ])
 
@@ -61,18 +62,24 @@ class Client:
 
     def receive_frame(self):
         while self.running:
-            # try:
+            try:
+                # Todo
+                # 원본을 self.frame_queue.put(frame)에 넣고
+                # 자른건 소켓으로 보내기
+                # 그릴 때 비율 잘 맞춰서 그리기. 
                 frame = next(self.image_generator)
+                print("Fame sent size", frame.shape)
                 self.conn.sendall(frame.tobytes())
             
                 label_data = self.conn.recv(self.label_size)
                 # print("Label data received")
                 if not label_data:
-                    break
+                    continue
                 # print("Label data size:", len(label_data))
                 
                 label_array = np.frombuffer(label_data, dtype=self.label_dtype).copy()
 
+                # print("Bouding box", label_array["face_bounding_box"][0])
                 # Consider the main person.
                 # Initialize the generator if it's the first run
                 if self.postproc_gen is None:
@@ -91,15 +98,20 @@ class Client:
                     self.frame_queue.put(frame)
 
                 label_array['distance'] = np.int16(dist_neck * 100)
+                
                 #print("Distance:", label_array['distance'])
-                print(label_array['body_keypoints2d'])
+                print(label_array['body_keypoints2d'][0])
                 if not self.label_data_queue.full():
                     self.label_data_queue.put(label_array)
+                    
+                # if cnt == 10:
+                    # pickle.dump(keep, open("label_data.pkl", "wb"))
+                    # print("DUMPED")
                 
-
-            # except Exception as e:
-            #     print(f"Error receiving data: {e}")
-            #     break
+            except Exception as e:
+                print(f"Error receiving data: {e}")
+                # self.cleanup()
+                # break
 
         self.cleanup()
 
