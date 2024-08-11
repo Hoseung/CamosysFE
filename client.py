@@ -69,7 +69,7 @@ class Client:
         if self.sock:
             self.sock.close()
 
-    def receive_frame(self):
+    def receive_frame_(self):
         flist = glob("./test7/frame*.jpg")
         flist.sort()
         lablels = pickle.load(open("./test7/label_data.pkl", "rb"))
@@ -107,26 +107,27 @@ class Client:
             self.frame_queue.put(frame)
             self.label_data_queue.put(label_array)
 
-    def receive_frame_(self):
+    def receive_frame(self):
         save = []
         cnt = 0
         bad = 0
         while self.running:
             try:
+            # if True:
                 # Todo
                 # 원본을 self.frame_queue.put(frame)에 넣고
                 # 자른건 소켓으로 보내기
                 # 그릴 때 비율 잘 맞춰서 그리기. 
                 frame, frame_org = next(self.image_generator)
                 
-                cv2.imwrite(f"frame{cnt:03d}.jpg", frame)
+                # cv2.imwrite(f"frame{cnt:03d}.jpg", frame)
                 # print("Fame sent size", frame.shape)
                 self.conn.sendall(frame.tobytes())
             
                 label_data = self.conn.recv(self.label_size)
                 if not label_data:
                     bad += 1
-                    if bad == 10:
+                    if bad == 30:
                         bad = 0
                         break
                     continue
@@ -145,26 +146,22 @@ class Client:
                 else:
                     # Get the next result from the generator
                     self.postproc_gen.send(label_array)
-
-                    # print(dist_neck)  # Handle the output from the generator
                 
                 ### Finally update the view
                 if not self.frame_queue.full():
-                    self.frame_queue.put(frame)
+                    self.frame_queue.put(frame_org)
 
-                #print("Distance:", label_array['distance'])
-                # print(label_array['body_keypoints2d'][0])
                 if not self.label_data_queue.full():
                     self.label_data_queue.put(label_array)
                 
                 print(f"Count -- {cnt}")
-                if cnt % 100 == 0:
-                    pickle.dump(save, open("label_data.pkl", "wb"))
+                # if cnt % 100 == 0:
+                #     pickle.dump(save, open("label_data.pkl", "wb"))
                     
             except Exception as e:
                 print(f"Error receiving data: {e}")
-                # self.cleanup()
-                # break
+                self.cleanup()
+                break
 
         self.cleanup()
 

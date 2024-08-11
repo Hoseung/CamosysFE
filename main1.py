@@ -518,8 +518,8 @@ def main():
     client = Client(server_ip = host_ip, 
                     camera_height=args.height, 
                     camera_pitch=args.pitch) # 
-    # client.setup_socket()
-    # client.accept_connection()
+    client.setup_socket()
+    client.accept_connection()
 
     use = ["distance", "eye_openness", "drowsiness", "phoneuse", "phone_use_conf", "passenger", "face_landmarks_x", "face_landmarks_y",
            "body_keypoints_x", "body_keypoints_y", "body_keypoints_z", "joint_lengths", "face_bounding_box"]

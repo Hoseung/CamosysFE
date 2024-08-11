@@ -115,7 +115,7 @@ class DistanceTriangle():
             dist = 0.5*(self.dist_camroot_to_foot(feet[0][1]) + \
                 self.dist_camroot_to_foot(feet[1][1]))
             self.foot_ind = 0
-        # print("[cal_body_size] Height", height, "Dist", dist)
+        print("[cal_body_size] Height", height, "Dist", dist)
         return height, dist
     
     def height_taken(self, keypoints_2d, take_frac = 0.86):

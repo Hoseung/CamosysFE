@@ -35,14 +35,15 @@ class CameraDataGenerator:
     def __init__(self, camera_index=0, crop=False):
         self.cap = cv2.VideoCapture(camera_index)
         self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        self.cap.set(cv2.CAP_PROP_FPS, 30)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
         if not self.cap.isOpened():
             raise Exception("Could not open video device")
 
         self.crop = crop
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-
+        
     def __iter__(self):
         return self
 
@@ -52,11 +53,11 @@ class CameraDataGenerator:
             raise Exception("Could not read frame from camera")
         else:
             cropped = frame[self.crop[0]:self.crop[1],self.crop[2]:self.crop[3]]
-            #cv2.resize(frame, (1024,1024))
+            #cropped = cv2.resize(frame, (1024,1024))
 
         cropped = cv2.cvtColor(cropped, cv2.COLOR_RGB2GRAY)
         # print("frame shape", frame.shape)
-        return cropped, frame
+        return cropped, cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
     def release(self):
         self.cap.release()
