@@ -356,6 +356,11 @@ class MainWindow(QWidget):
             area_rmax = 1024 - 100
             
             box = label_data["face_bounding_box"][0]
+            cv2.rectangle(frame, (int((fhd_shift_x+area_lmin)*frame_width_resize_ratio),
+                                  int(fhd_shift_y*frame_height_resize_ratio)),
+                          (int((1920 - fhd_shift_x - area_lmin)*frame_width_resize_ratio),
+                                  int(frame_height_resize)), 
+                          (105, 105, 105), 3)
             if box is not None and box[0] > area_lmin and box[3] < area_rmax:
                     
                 # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
@@ -424,7 +429,6 @@ class MainWindow(QWidget):
             self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Property 1={str(label_data["drowsiness"][0])}, Selected=Off.png'))
             self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0] else "Off"}.png'))
             self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0], 2)) + "%)")
-            print("passenger", label_data["passenger"][0])
             self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
                 f"""
