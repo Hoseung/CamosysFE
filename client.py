@@ -63,15 +63,22 @@ class Client:
         if self.sock:
             self.sock.close()
 
-    def receive_frame_(self):
-        flist = glob("frame*.jpg")
+    def receive_frame(self):
+        flist = glob("./test7/frame*.jpg")
         flist.sort()
-        lablels = pickle.load(open("label_data.pkl", "rb"))
+        lablels = pickle.load(open("./test7/label_data.pkl", "rb"))
 
         for i, label_array in enumerate(lablels):
             time.sleep(0.04)
             frame = cv2.imread(flist[i])
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            
+            frame = cv2.copyMakeBorder(
+                            frame,
+                            56,0, 448, 448,
+                            cv2.BORDER_CONSTANT,
+                            value=[0, 0, 0]  # Black padding; change to other values for different colors
+                        )
             # label_array = lablels[i]
             
             if self.postproc_gen is None:
@@ -94,7 +101,7 @@ class Client:
             self.frame_queue.put(frame)
             self.label_data_queue.put(label_array)
 
-    def receive_frame(self):
+    def receive_frame_(self):
         save = []
         cnt = 0
         bad = 0
