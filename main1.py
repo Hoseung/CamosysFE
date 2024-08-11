@@ -332,25 +332,32 @@ class MainWindow(QWidget):
 
     def update_view(self):
         if not self.client.frame_queue.empty() and not self.client.label_data_queue.empty():
-            frame_width_resize = 1000
+            frame_width_resize = 1333 # 1333 -> 16:9
             frame_height_resize = 750
+            
+            fhd_shift_x = 448
+            fhd_shift_y = 56
 
             frame = self.client.frame_queue.get()
             if frame_width_resize != frame.shape[1] or frame_height_resize != frame.shape[0]:
-                frame_width_resize_ratio = frame_width_resize / self.client.frame_width
-                frame_height_resize_ratio = frame_height_resize / self.client.frame_height
+                frame_width_resize_ratio = frame_width_resize / frame.shape[1]
+                frame_height_resize_ratio = frame_height_resize / frame.shape[0]
                 frame = cv2.resize(frame, (frame_width_resize, frame_height_resize))
+            
             
             label_data = self.client.label_data_queue.get()
 
             h, w = frame.shape
             bytes_per_line = w
-
+            
+            # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
+            # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
+            
             # body_keypoints
-            bk2d_x = np.round(label_data["body_keypoints2d"][0][0] * frame_width_resize_ratio).astype(int)
-            bk2d_y = np.round(label_data["body_keypoints2d"][0][1] * frame_height_resize_ratio).astype(int)
+            bk2d_x = np.round((label_data["body_keypoints2d"][0][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
+            bk2d_y = np.round((label_data["body_keypoints2d"][0][1] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
             # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
-
+            # print("after2", bk2d_x)
             bk_3dx = label_data["body_keypoints3d"][0][0]
             bk_3dy = label_data["body_keypoints3d"][0][1]
             bk_3dz = label_data["body_keypoints3d"][0][2]
@@ -371,21 +378,21 @@ class MainWindow(QWidget):
                             (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
             # face_landmarks
-            face_landmarks_x = np.round(label_data["face_landmarks_x"][0] * frame_width_resize_ratio).astype(int)
-            face_landmarks_y = np.round(label_data["face_landmarks_y"][0] * frame_height_resize_ratio).astype(int)
+            face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
+            face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
 
             radius = 2
 
             for i in range(len(face_landmarks_x)):
                 cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
 
-            ptl = np.array([label_data["face_bounding_box"][0][0] * frame_width_resize_ratio,
-                            label_data["face_bounding_box"][0][1] * frame_height_resize_ratio]).astype(int)
-            pbr = np.array([label_data["face_bounding_box"][0][2] * frame_width_resize_ratio,
-                            label_data["face_bounding_box"][0][3] * frame_height_resize_ratio]).astype(int)
+            ptl = np.array([(label_data["face_bounding_box"][0][0] + fhd_shift_x)* frame_width_resize_ratio,
+                            (label_data["face_bounding_box"][0][1] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
+            pbr = np.array([(label_data["face_bounding_box"][0][2] + fhd_shift_x)* frame_width_resize_ratio,
+                            (label_data["face_bounding_box"][0][3] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
             cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
 
-            # qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+            #qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
             qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_Grayscale8).rgbSwapped()
 
             pixmap = QPixmap.fromImage(qimg)
@@ -481,8 +488,8 @@ def main():
                 """)
     host_ip = ['169.254.244.73','169.254.31.226'][0]
     client = Client(server_ip = host_ip) # 
-    client.setup_socket()
-    client.accept_connection()
+    # client.setup_socket()
+    # client.accept_connection()
 
     use = ["distance", "eye_openness", "drowsiness", "phoneuse", "phone_use_conf", "passenger", "face_landmarks_x", "face_landmarks_y",
            "body_keypoints_x", "body_keypoints_y", "body_keypoints_z", "joint_lengths", "face_bounding_box"]

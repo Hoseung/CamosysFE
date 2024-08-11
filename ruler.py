@@ -1,8 +1,6 @@
 import math
 import numpy as np
-#import yaml
 import cv2
-
 
 class DistanceTriangle():
     """
@@ -12,9 +10,9 @@ class DistanceTriangle():
                  camera_height = 1.5, 
                  fov_v=91,
                  horizontal_fov_deg=166, 
-                 image_width = 640,
-                 image_height = 480, 
-                 camera_pitch = -24):
+                 image_width = 1024,
+                 image_height = 1024, 
+                 camera_pitch = -20):
         self.camera_matrix = np.array([[380.5828, 0., 327.04076],
                                        [0., 381.61306, 245.22762],
                                        [0., 0., 1.]])
