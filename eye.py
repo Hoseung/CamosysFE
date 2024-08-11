@@ -1,4 +1,24 @@
 import numpy as np
+from scipy.spatial.distance import pdist
+
+def std2d(x, y):
+    return np.sqrt(np.var(x) + np.var(y))
+
+def gini_coefficient_2d(points):
+    # Calculate pairwise distances between points
+    pairwise_distances = pdist(points, 'euclidean')
+    
+    # Sort distances
+    sorted_distances = np.sort(pairwise_distances)
+    
+    n = len(sorted_distances)
+    cumulative_sum = np.cumsum(sorted_distances)
+    
+    # Gini coefficient calculation
+    gini = (2 / n) * np.sum((np.arange(1, n+1) * sorted_distances)) / cumulative_sum[-1] - (n + 1) / n
+    
+    return gini
+    #return max(0, gini) 
 
 def euclidean_dist(a, b):
     return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
@@ -31,7 +51,7 @@ def final_ear(lmks):
 
 
 class Eye:
-    def __init__(self, drowsy_nmax=10):
+    def __init__(self, drowsy_nmax=20):
         self.EAR = 0
         self.EARs = []
         self.drowsy_val = 0
@@ -42,7 +62,7 @@ class Eye:
         keep last N EAR and check drowsiness
         """
         self.EAR = float(final_ear(lmks)[0])
-        print("EYE", self.EAR)
+        # print("EYE", self.EAR)
         self.EARs.append(self.EAR)
         while len(self.EARs) > self.drowsy_nmax:
             self.EARs.pop(0)
@@ -57,26 +77,7 @@ class Eye:
         """
         # TODO | OverflowError: cannot convert float infinity to integer
         # try:
-        self.drowsy_val = (1 - (min(20, int(20 * np.mean(self.EARs) / 0.4)) / 20))*5
-        # except OverflowError:
-        #     self.drowsy_val = 0
-        # if len(self.EARs) < self.drowsy_nmax:
-        #     self.drowsyness = 0
-        # else:
-        #     _mean = np.mean(self.EARs)
-        #     # self.EAR_thres * self.this_eye_size:
-        #     if 0.1 < _mean < 0.3:
-        #         # self.sleep = False
-        #         # self.microsleep = True
-        #         self.drowsyness = 3
-        #     elif _mean <= 0.1:
-        #         # self.sleep = True
-        #         # self.microsleep = False
-        #         self.drowsyness = 2
-        #     else:
-        #         # self.sleep = False
-        #         # self.microsleep = False
-        #         self.drowsyness = 4
+        self.drowsy_val = (1 - (min(20, int(20 * np.mean(self.EARs) / 0.4)) / 20))*6
     
     def reset_EAR(self):
         self.EAR_min = 1
