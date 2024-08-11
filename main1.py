@@ -77,7 +77,7 @@ class MainWindow(QWidget):
             """
         )
         vbox2_1_1_1.addWidget(lbl_txt_2_1_1_1)
-        self.lbl_txt_2_1_1_2 = QLabel("30cm")
+        self.lbl_txt_2_1_1_2 = QLabel("100cm")
         self.lbl_txt_2_1_1_2.setAlignment(Qt.AlignTop)
         self.lbl_txt_2_1_1_2.setContentsMargins(20, 0, 0, 0)
         self.lbl_txt_2_1_1_2.setStyleSheet(
@@ -345,54 +345,60 @@ class MainWindow(QWidget):
                 frame_height_resize_ratio = frame_height_resize / frame.shape[0]
                 frame = cv2.resize(frame, (frame_width_resize, frame_height_resize))
             
-            
             label_data = self.client.label_data_queue.get()
 
             h, w = frame.shape
             bytes_per_line = w * 3
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             
-            # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
-            # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
             
-            # body_keypoints
-            bk2d_x = np.round((label_data["body_keypoints2d"][0][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
-            bk2d_y = np.round((label_data["body_keypoints2d"][0][1] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
-            # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
-            # print("after2", bk2d_x)
-            bk_3dx = label_data["body_keypoints3d"][0][0]
-            bk_3dy = label_data["body_keypoints3d"][0][1]
-            bk_3dz = label_data["body_keypoints3d"][0][2]
+            area_lmin = 100
+            area_rmax = 1024 - 100
             
-            color = (24, 24, 244)  # BGR
-            color2 = (46, 234, 255)
-            radius = 5
+            box = label_data["face_bounding_box"][0]
+            if box is not None and box[0] > area_lmin and box[3] < area_rmax:
+                    
+                # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
+                # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
+                
+                # body_keypoints
+                bk2d_x = np.round((label_data["body_keypoints2d"][0][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
+                bk2d_y = np.round((label_data["body_keypoints2d"][0][1] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
+                # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
+                # print("after2", bk2d_x)
+                bk_3dx = label_data["body_keypoints3d"][0][0]
+                bk_3dy = label_data["body_keypoints3d"][0][1]
+                bk_3dz = label_data["body_keypoints3d"][0][2]
+                
+                color = (24, 24, 244)  # BGR
+                color2 = (46, 234, 255)
+                radius = 5
 
-            for connection in connections_2d:
-                cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
-                                (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
-                                 (0, 255, 0), 2)
+                for connection in connections_2d:
+                    cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
+                                    (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
+                                    (0, 255, 0), 2)
 
-            # Draw the keypoints
-            for i in range(len(bk2d_x)):
-                cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
-                cv2.putText(frame, f"{bk_3dx[sort2d_to_3d[i]]}  {bk_3dy[sort2d_to_3d[i]]}  {bk_3dz[sort2d_to_3d[i]]}", 
-                            (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                # Draw the keypoints
+                for i in range(len(bk2d_x)):
+                    cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
+                    cv2.putText(frame, f"{bk_3dx[sort2d_to_3d[i]]}  {bk_3dy[sort2d_to_3d[i]]}  {bk_3dz[sort2d_to_3d[i]]}", 
+                                (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
-            # face_landmarks
-            face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
-            face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
+                # face_landmarks
+                face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
+                face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
 
-            radius = 2
+                radius = 2
 
-            for i in range(len(face_landmarks_x)):
-                cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
-            bbox = label_data["face_bounding_box"][0].astype(int)
-            ptl = np.array([(bbox[0] + fhd_shift_x)* frame_width_resize_ratio,
-                            (bbox[1] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
-            pbr = np.array([(bbox[2] + fhd_shift_x)* frame_width_resize_ratio,
-                            (bbox[3] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
-            cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
+                for i in range(len(face_landmarks_x)):
+                    cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
+                bbox = label_data["face_bounding_box"][0].astype(int)
+                ptl = np.array([(bbox[0] + fhd_shift_x)* frame_width_resize_ratio,
+                                (bbox[1] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
+                pbr = np.array([(bbox[2] + fhd_shift_x)* frame_width_resize_ratio,
+                                (bbox[3] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
+                cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
 
             qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
             #qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_Grayscale8).rgbSwapped()
@@ -400,14 +406,25 @@ class MainWindow(QWidget):
             pixmap = QPixmap.fromImage(qimg)
             self.img_lbl.setPixmap(pixmap)
 
-            self.lbl_txt_2_1_1_2.setText(str(label_data["distance"][0]))
+            distance_value = label_data["distance"][0]
+            self.lbl_txt_2_1_1_2.setText(str(distance_value)+ "cm")
+            
+            if distance_value < 1:
+                color = "rgb(105, 105, 105)"
+            elif distance_value < 50:
+                color = "red"
+            else:
+                color = "rgb(255,255,255)"
+
+            # Set the color using a stylesheet
+            self.lbl_txt_2_1_1_2.setStyleSheet(f"color: {color}; font-size: 40px; font-weight: bold;")
             self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
             self.lbl_txt_2_1_1_6.setText(str(label_data['height'][0]))
             # bodysize
             self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Property 1={str(label_data["drowsiness"][0])}, Selected=Off.png'))
             self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0] else "Off"}.png'))
             self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0], 2)) + "%)")
-
+            print("passenger", label_data["passenger"][0])
             self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
                 f"""

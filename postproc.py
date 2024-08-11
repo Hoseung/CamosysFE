@@ -58,8 +58,8 @@ class PostProcessor:
             
             i += 1
             cnt += 1
-            face_wr_final = None 
-            face_hr_final = None
+            face_wr_final = 90 
+            face_hr_final = 100
             
             dist_face = 0
             # Valid face
@@ -77,14 +77,14 @@ class PostProcessor:
                                     std2d(flmk_x[42:48], flmk_y[42:48])])
                     
                     std_both = std2d(flmk_x[36:48], flmk_y[36:48])
-                    print(f"std_single {std_single:.2f} std_both {std_both:.2f}")
+                    # print(f"std_single {std_single:.2f} std_both {std_both:.2f}")
                     eye_dist_ratio = std_single/std_both * 2 # ~ 0.5
-                    print(f"Ratio {eye_dist_ratio:.2f}")
+                    # print(f"Ratio {eye_dist_ratio:.2f}")
                     
-                    dist_fh = face_height / face_hr_final
-                    dist_fw = face_width / face_wr_final
-                    dist_face = eye_dist_ratio**2 * dist_fh + (1-eye_dist_ratio**2)*dist_fw
-                
+                    dist_fh = face_hr_final / face_height
+                    dist_fw = face_wr_final / face_width
+                    dist_face = eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw
+                    print(face_height, face_width, dist_fh, dist_fw, dist_face)
                 # smoothing 2d keypoints
                 # if smoothed_keypoints_2d is None:
                 #     smoothed_keypoints_2d = keypoints_2d[:,:2]
@@ -94,7 +94,7 @@ class PostProcessor:
                 #     keypoints_2d[:,:2] = smoothed_keypoints_2d
                 
                 if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold and keypoints_2d_conf[12] > conf_threshold:
-                    # print("Full body visible")
+                    print("Full body visible")
                     height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.88)
                     if dist:
                         #takes.append(True)
@@ -125,6 +125,7 @@ class PostProcessor:
                             print(f"at dist {dist:.2f}")                            
                             initial_guess_face_h.append(face_hr)
                             initial_guess_face_w.append(face_wr)
+                            label_array['passenger'][0] = -1
                             
                         elif cnt == self.cnt_initial: 
                             running_avg = np.percentile(initial_guess, 90)
@@ -169,7 +170,7 @@ class PostProcessor:
                         label_array['passenger'][0] = -1
 
                 
-                print(dist_face, dist_neck, self.dt.foot_ind)
+                # print(dist_face, dist_neck, self.dt.foot_ind)
                 # dist_neck to camera_root
                 if cnt > self.cnt_initial and cnt % 10 == 1:
                     # dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc) 
@@ -196,7 +197,7 @@ class PostProcessor:
                     no_person = 0
                     initial_guess = []
                     label_array['distance'] = -1
-            print("Distance to camera", dist_face)
+            # print("Distance to camera", dist_face)
             label_array['height'][0] = min(running_avg*124, 999)
             label_array['distance'][0] = min(dist_face*100, 9999)
             label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
