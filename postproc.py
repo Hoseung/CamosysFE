@@ -129,7 +129,7 @@ class PostProcessor:
                 
                 # print(f"Height  {running_avg*100}")
                 # if cnt % 10 == 1 and running_avg > 0:
-                factor = 1.1 + 0.05
+                factor = 1.24
                 if running_avg > 0:
                     if running_avg*factor > 0.40 and running_avg*factor < 1.20:
                         label_array['passenger'][0] = 1
@@ -170,7 +170,7 @@ class PostProcessor:
                     initial_guess = []
                     label_array['distance'] = -1
 
-            label_array['height'][0] = min(running_avg*111+5, 999)
+            label_array['height'][0] = min(running_avg*124, 999)
             label_array['distance'][0] = min(dist_neck*100, 9999)
             label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
             label_array['drowsiness'][0] = eye.drowsy_val

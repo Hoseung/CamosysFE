@@ -119,8 +119,9 @@ class DistanceTriangle():
         return height, dist
     
     def height_taken(self, keypoints_2d, take_frac = 0.86):
-        height_pixel, bone_sum_pixel = get_bone_length_sum(keypoints_2d)
-        height, dist = self.cal_body_size(keypoints_2d)
+        undistorted = np.array([self.undistort_normed(p) for p in keypoints_2d.T]).T
+        height_pixel, bone_sum_pixel = get_bone_length_sum(undistorted)
+        height, dist = self.cal_body_size(undistorted)
         if take_frac * height_pixel > bone_sum_pixel:
             return height, dist
         else:
@@ -134,10 +135,7 @@ def take_avg_or_larger(v1, v2, threshold=1.2):
             
 def get_bone_length_sum(keypoints_2d):
     # in pixels
-    # print(keypoints_2d)
     #lc = length_connections_2d
-    # print("keypoints_2d[:,1]", keypoints_2d[:,1], keypoints_2d[:,7])
-    # print(keypoints_2d[:,1] - keypoints_2d[:,7])
     l_torso = np.linalg.norm(keypoints_2d[:,1] - keypoints_2d[:,7])
     l_thigh = np.linalg.norm(keypoints_2d[:,7] - keypoints_2d[:,9])
     l_calf  = np.linalg.norm(keypoints_2d[:,9] - keypoints_2d[:,11])
