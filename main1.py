@@ -7,13 +7,6 @@ import threading
 import cv2
 from client import Client
 
-# import socket
-# import struct
-# import queue
-# from datagenerator import CameraDataGenerator
-# from postproc import PostProcessor
-# import time
-
 def my_exception_hook(exctype, value, traceback):
     # Print the error and traceback
     print(exctype, value, traceback)
@@ -34,6 +27,8 @@ connections_2d = [
     (1, 7), (7, 8), (8, 10), (10, 12),
     (7, 9), (9, 11)
 ]
+
+sort2d_to_3d = (8,9,12,10,13,11,14,4,1,5,2,6,3)
 
 class MainWindow(QWidget):
     def __init__(self, client, use, *args, **kwargs):
@@ -125,7 +120,7 @@ class MainWindow(QWidget):
             """
         )
         vbox2_1_1_1.addWidget(lbl_txt_2_1_1_5)
-        self.lbl_txt_2_1_1_6 = QLabel("46cm")
+        self.lbl_txt_2_1_1_6 = QLabel("146cm")
         self.lbl_txt_2_1_1_6.setAlignment(Qt.AlignTop)
         self.lbl_txt_2_1_1_6.setContentsMargins(20, 0, 0, 0)
         self.lbl_txt_2_1_1_6.setStyleSheet(
@@ -372,7 +367,7 @@ class MainWindow(QWidget):
             # Draw the keypoints
             for i in range(len(bk2d_x)):
                 cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
-                cv2.putText(frame, f"{bk_3dx[i]}  {bk_3dy[i]}  {bk_3dz[i]}", 
+                cv2.putText(frame, f"{bk_3dx[sort2d_to_3d[i]]}  {bk_3dy[sort2d_to_3d[i]]}  {bk_3dz[sort2d_to_3d[i]]}", 
                             (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
             # face_landmarks
@@ -397,23 +392,33 @@ class MainWindow(QWidget):
             self.img_lbl.setPixmap(pixmap)
 
             self.lbl_txt_2_1_1_2.setText(str(label_data["distance"][0]))
-            self.lbl_txt_2_1_1_4.setText(str(round(label_data["eye_openness"][0] * 100, 2)) + "%")
+            self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
+            self.lbl_txt_2_1_1_6.setText(str(label_data['height'][0]))
             # bodysize
             self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Property 1={str(label_data["drowsiness"][0])}, Selected=Off.png'))
             self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0] else "Off"}.png'))
-            self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0] * 100, 2)) + "%)")
+            self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0], 2)) + "%)")
 
-            self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0] == 1 else "Off"}.png'))
+            self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
                 f"""
-                {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 1 else "color: rgb(105, 105, 105);"}
+                {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 0 else "color: rgb(105, 105, 105);"}
                 font-size: 20px;
                 font-weight: bold;
                 """
             )
 
-            self.lbl_img_3_3.setPixmap(QPixmap(f'icon/Property 1=Age 1~6, Selected={"On" if label_data["passenger"][0] == 2 else "Off"}.png'))
+            self.lbl_img_3_3.setPixmap(QPixmap(f'icon/Property 1=Age 1~6, Selected={"On" if label_data["passenger"][0] == 1 else "Off"}.png'))
             self.lbl_txt_3_3.setStyleSheet(
+                f"""
+                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 1 else "color: rgb(105, 105, 105);"}
+                            font-size: 20px;
+                            font-weight: bold;
+                            """
+            )
+
+            self.lbl_img_3_4.setPixmap(QPixmap(f'icon/Property 1=AF05, Selected={"On" if label_data["passenger"][0] == 2 else "Off"}.png'))
+            self.lbl_txt_3_4.setStyleSheet(
                 f"""
                             {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 2 else "color: rgb(105, 105, 105);"}
                             font-size: 20px;
@@ -421,8 +426,8 @@ class MainWindow(QWidget):
                             """
             )
 
-            self.lbl_img_3_4.setPixmap(QPixmap(f'icon/Property 1=AF05, Selected={"On" if label_data["passenger"][0] == 3 else "Off"}.png'))
-            self.lbl_txt_3_4.setStyleSheet(
+            self.lbl_img_3_5.setPixmap(QPixmap(f'icon/Property 1=AM50, Selected={"On" if label_data["passenger"][0] == 3 else "Off"}.png'))
+            self.lbl_txt_3_5.setStyleSheet(
                 f"""
                             {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 3 else "color: rgb(105, 105, 105);"}
                             font-size: 20px;
@@ -430,19 +435,10 @@ class MainWindow(QWidget):
                             """
             )
 
-            self.lbl_img_3_5.setPixmap(QPixmap(f'icon/Property 1=AM50, Selected={"On" if label_data["passenger"][0] == 4 else "Off"}.png'))
-            self.lbl_txt_3_5.setStyleSheet(
-                f"""
-                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 4 else "color: rgb(105, 105, 105);"}
-                            font-size: 20px;
-                            font-weight: bold;
-                            """
-            )
-
-            self.lbl_img_3_6.setPixmap(QPixmap(f'icon/Property 1=AM95, Selected={"On" if label_data["passenger"][0] == 5 else "Off"}.png'))
+            self.lbl_img_3_6.setPixmap(QPixmap(f'icon/Property 1=AM95, Selected={"On" if label_data["passenger"][0] == 4 else "Off"}.png'))
             self.lbl_txt_3_6.setStyleSheet(
                 f"""
-                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 5 else "color: rgb(105, 105, 105);"}
+                            {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 4 else "color: rgb(105, 105, 105);"}
                             font-size: 20px;
                             font-weight: bold;
                             """

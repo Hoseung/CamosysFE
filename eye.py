@@ -18,9 +18,11 @@ def eye_aspect_ratio(eye):
 
     return (ear, left_ear, right_ear)
 
-def final_ear(shape):
-    leftEye = shape[36:42]
-    rightEye = shape[42:48]
+def final_ear(lmks):
+    leftEye = np.array([lmks[0][36:42],
+                        lmks[1][36:42]]).T
+    rightEye = np.array([lmks[0][42:48],
+                        lmks[1][42:48]]).T
 
     leftEAR, left_, _ = eye_aspect_ratio(leftEye)
     rightEAR, _, right_ = eye_aspect_ratio(rightEye)
@@ -32,35 +34,52 @@ class Eye:
     def __init__(self, drowsy_nmax=10):
         self.EAR = 0
         self.EARs = []
-        self.drowsy = False
+        self.drowsy_val = 0
         self.drowsy_nmax = drowsy_nmax
 
     def update_EAR(self, lmks):
         """
         keep last N EAR and check drowsiness
         """
-        self.EAR = final_ear(lmks)[0]
+        self.EAR = float(final_ear(lmks)[0])
+        print("EYE", self.EAR)
         self.EARs.append(self.EAR)
         while len(self.EARs) > self.drowsy_nmax:
             self.EARs.pop(0)
 
-        self.check_eye_drowsy()
+        # print("len(self.EARs)", len(self.EARs))
+        if len(self.EARs) > 5:
+            self.check_eye_drowsy()
 
     def check_eye_drowsy(self):
         """
         EARs -> drowsy[T/F]
         """
-        if len(self.EARs) < self.drowsy_nmax:
-            self.drowsy = False
-        else:
-            # self.EAR_thres * self.this_eye_size:
-            if np.mean(self.EARs) < 0.3:
-                self.drowsy = True
-            else:
-                self.drowsy = False
-
+        # TODO | OverflowError: cannot convert float infinity to integer
+        # try:
+        self.drowsy_val = (1 - (min(20, int(20 * np.mean(self.EARs) / 0.4)) / 20))*5
+        # except OverflowError:
+        #     self.drowsy_val = 0
+        # if len(self.EARs) < self.drowsy_nmax:
+        #     self.drowsyness = 0
+        # else:
+        #     _mean = np.mean(self.EARs)
+        #     # self.EAR_thres * self.this_eye_size:
+        #     if 0.1 < _mean < 0.3:
+        #         # self.sleep = False
+        #         # self.microsleep = True
+        #         self.drowsyness = 3
+        #     elif _mean <= 0.1:
+        #         # self.sleep = True
+        #         # self.microsleep = False
+        #         self.drowsyness = 2
+        #     else:
+        #         # self.sleep = False
+        #         # self.microsleep = False
+        #         self.drowsyness = 4
+    
     def reset_EAR(self):
         self.EAR_min = 1
         self.EAR_max = 0
         self.EARs = []
-        self.drowsy = False
+        self.drowsy_val = 0

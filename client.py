@@ -5,6 +5,9 @@ from postproc import PostProcessor
 import socket
 import struct
 import numpy as np
+import cv2
+from glob import glob
+import time
 class Client:
     def __init__(self, server_ip, port=65432, frame_width=1024, frame_height=1024):
         self.server_address = (server_ip, port)
@@ -60,24 +63,65 @@ class Client:
         if self.sock:
             self.sock.close()
 
+    def receive_frame_(self):
+        flist = glob("frame*.jpg")
+        flist.sort()
+        lablels = pickle.load(open("label_data.pkl", "rb"))
+
+        for i, label_array in enumerate(lablels):
+            time.sleep(0.04)
+            frame = cv2.imread(flist[i])
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # label_array = lablels[i]
+            
+            if self.postproc_gen is None:
+                self.postproc_gen = self.post_processor.run(label_array)
+                    # Prime the generator (advance to the first yield)
+                next(self.postproc_gen)
+                # dist_neck, body_size = 0,0
+            else:
+                # Get the next result from the generator
+                self.postproc_gen.send(label_array)
+                # print(dist_neck)  # Handle the output from the generator
+            
+            ### Finally update the view
+            if not self.frame_queue.full():
+                self.frame_queue.put(frame)
+
+            if not self.label_data_queue.full():
+                self.label_data_queue.put(label_array)
+        
+            self.frame_queue.put(frame)
+            self.label_data_queue.put(label_array)
+
     def receive_frame(self):
+        save = []
+        cnt = 0
+        bad = 0
         while self.running:
             try:
                 # Todo
                 # 원본을 self.frame_queue.put(frame)에 넣고
                 # 자른건 소켓으로 보내기
                 # 그릴 때 비율 잘 맞춰서 그리기. 
-                frame = next(self.image_generator)
+                frame, frame_org = next(self.image_generator)
+                
+                cv2.imwrite(f"frame{cnt:03d}.jpg", frame)
                 # print("Fame sent size", frame.shape)
                 self.conn.sendall(frame.tobytes())
             
                 label_data = self.conn.recv(self.label_size)
                 if not label_data:
+                    bad += 1
+                    if bad == 10:
+                        bad = 0
+                        break
                     continue
                 # print("Label data size:", len(label_data))
                 
                 label_array = np.frombuffer(label_data, dtype=self.label_dtype).copy()
-
+                save.append(label_array)
+                cnt += 1
                 # Consider the main person.
                 # Initialize the generator if it's the first run
                 if self.postproc_gen is None:
@@ -99,6 +143,10 @@ class Client:
                 # print(label_array['body_keypoints2d'][0])
                 if not self.label_data_queue.full():
                     self.label_data_queue.put(label_array)
+                
+                print(f"Count -- {cnt}")
+                if cnt % 100 == 0:
+                    pickle.dump(save, open("label_data.pkl", "wb"))
                     
             except Exception as e:
                 print(f"Error receiving data: {e}")
