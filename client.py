@@ -72,14 +72,12 @@ class Client:
                 self.conn.sendall(frame.tobytes())
             
                 label_data = self.conn.recv(self.label_size)
-                # print("Label data received")
                 if not label_data:
                     continue
                 # print("Label data size:", len(label_data))
                 
                 label_array = np.frombuffer(label_data, dtype=self.label_dtype).copy()
 
-                # print("Bouding box", label_array["face_bounding_box"][0])
                 # Consider the main person.
                 # Initialize the generator if it's the first run
                 if self.postproc_gen is None:
@@ -104,10 +102,6 @@ class Client:
                 if not self.label_data_queue.full():
                     self.label_data_queue.put(label_array)
                     
-                # if cnt == 10:
-                    # pickle.dump(keep, open("label_data.pkl", "wb"))
-                    # print("DUMPED")
-                
             except Exception as e:
                 print(f"Error receiving data: {e}")
                 # self.cleanup()

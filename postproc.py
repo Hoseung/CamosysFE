@@ -80,8 +80,8 @@ class PostProcessor:
                                 running_avg = self.alpha * height + (1 - self.alpha) * running_avg
                             
                             # Update 3D Scale
-                            l_head_to_foot = np.linalg.norm(key3d[8]-key3d[3])
-                            r_head_to_foot = np.linalg.norm(key3d[8]-key3d[6])
+                            l_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,3])
+                            r_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,6])
                             head_to_foot3d = take_avg_or_larger(l_head_to_foot, r_head_to_foot)
                             scale3d = running_avg / head_to_foot3d
                         elif cnt < self.cnt_initial: 
@@ -127,7 +127,7 @@ class PostProcessor:
                 # print(key3d[7], self.cam_loc)
                 # dist_neck to camera_root
                 if cnt > self.cnt_initial and cnt % 10 == 1:
-                    dist_neck = np.linalg.norm(key3d[7] - self.cam_loc) 
+                    dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc) 
                     print(f"Distance to camera: {dist_neck:.3f} m")
                     if dist_neck < 0.5:
                         too_close = min(50, too_close + 1)
