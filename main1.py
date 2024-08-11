@@ -385,11 +385,11 @@ class MainWindow(QWidget):
 
             for i in range(len(face_landmarks_x)):
                 cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
-
-            ptl = np.array([(label_data["face_bounding_box"][0][0] + fhd_shift_x)* frame_width_resize_ratio,
-                            (label_data["face_bounding_box"][0][1] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
-            pbr = np.array([(label_data["face_bounding_box"][0][2] + fhd_shift_x)* frame_width_resize_ratio,
-                            (label_data["face_bounding_box"][0][3] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
+            bbox = label_data["face_bounding_box"][0].astype(int)
+            ptl = np.array([(bbox[0] + fhd_shift_x)* frame_width_resize_ratio,
+                            (bbox[1] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
+            pbr = np.array([(bbox[2] + fhd_shift_x)* frame_width_resize_ratio,
+                            (bbox[3] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
             cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
 
             #qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
