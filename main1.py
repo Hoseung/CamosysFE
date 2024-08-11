@@ -365,15 +365,12 @@ class MainWindow(QWidget):
             radius = 5
 
             for connection in connections_2d:
-                #x1, y1 = body_keypoints_x[connection[0]], body_keypoints_y[connection[0]]
-                #x2, y2 = body_keypoints_x[connection[1]], body_keypoints_y[connection[1]]
-                # cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
                                 (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
                                  (0, 255, 0), 2)
 
             # Draw the keypoints
-            for i in range(len(bk2d_x) - 1):
+            for i in range(len(bk2d_x)):
                 cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
                 cv2.putText(frame, f"{bk_3dx[i]}  {bk_3dy[i]}  {bk_3dz[i]}", 
                             (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
@@ -382,10 +379,9 @@ class MainWindow(QWidget):
             face_landmarks_x = np.round(label_data["face_landmarks_x"][0] * frame_width_resize_ratio).astype(int)
             face_landmarks_y = np.round(label_data["face_landmarks_y"][0] * frame_height_resize_ratio).astype(int)
 
-            color = (46, 234, 255)
             radius = 2
 
-            for i in range(len(face_landmarks_x) - 1):
+            for i in range(len(face_landmarks_x)):
                 cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
 
             ptl = np.array([label_data["face_bounding_box"][0][0] * frame_width_resize_ratio,
