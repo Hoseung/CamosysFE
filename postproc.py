@@ -1,11 +1,11 @@
 import numpy as np
 from ruler import DistanceTriangle, take_avg_or_larger
-from eye import Eye
+from eye import Eye, std2d
 
 class PostProcessor:
-    def __init__(self, image_width=1024, image_height=1024):
-        self.camera_height=1.4
-        camera_pitch=10
+    def __init__(self, image_width=1024, image_height=1024,
+                 camera_height=1.4, camera_pitch=10):
+        self.camera_height=camera_height
         self.dt = DistanceTriangle(fov_v=90,
                                    image_width=image_width,
                                    image_height=image_height,
@@ -20,7 +20,7 @@ class PostProcessor:
 
         # upper body running mean
         self.alpha = 0.01
-        self.cnt_initial = 50
+        self.cnt_initial = 30
                 
         self.foot_ind3d = [3,6]
         self.area_lmin = 200
@@ -31,14 +31,14 @@ class PostProcessor:
         initial_guess_face_h = []
         initial_guess_face_w = []
         running_avg = 0
-        smoothed_keypoints_2d = None
+        # smoothed_keypoints_2d = None
         z_dist_foot = 1
         too_close = 0
         i = 0
         cnt = 0
         scale3d = 1.0
         no_person = 0
-        dist_neck = -1
+        # dist_neck = -1
         conf_threshold = 70
         
         eye = Eye()
@@ -58,12 +58,32 @@ class PostProcessor:
             
             i += 1
             cnt += 1
+            face_wr_final = None 
+            face_hr_final = None
+            
+            dist_face = 0
             # Valid face
             if box is not None and box[0] > self.area_lmin and box[3] < self.area_rmax:
                 if any(flmk_x[36:42] == 0) or any(flmk_y[36:42] == 0):
                     print("Invalid face landmarks")
                     continue    
                 eye.update_EAR((flmk_x, flmk_y))
+                face_width = np.mean(flmk_x[14:17] - flmk_x[:3]) 
+                face_height = 0.5*(np.linalg.norm(flmk_y[0] - flmk_y[9])+
+                                np.linalg.norm(flmk_y[16] - flmk_y[9]))
+                
+                if face_hr_final is not None:
+                    std_single = max([std2d(flmk_x[36:42], flmk_y[36:42]), 
+                                    std2d(flmk_x[42:48], flmk_y[42:48])])
+                    
+                    std_both = std2d(flmk_x[36:48], flmk_y[36:48])
+                    print(f"std_single {std_single:.2f} std_both {std_both:.2f}")
+                    eye_dist_ratio = std_single/std_both * 2 # ~ 0.5
+                    print(f"Ratio {eye_dist_ratio:.2f}")
+                    
+                    dist_fh = face_height / face_hr_final
+                    dist_fw = face_width / face_wr_final
+                    dist_face = eye_dist_ratio**2 * dist_fh + (1-eye_dist_ratio**2)*dist_fw
                 
                 # smoothing 2d keypoints
                 # if smoothed_keypoints_2d is None:
@@ -73,13 +93,9 @@ class PostProcessor:
                 #     smoothed_keypoints_2d = self.alpha_2d * keypoints_2d[:,:2] + (1 - self.alpha_2d) * smoothed_keypoints_2d
                 #     keypoints_2d[:,:2] = smoothed_keypoints_2d
                 
-                # full body visible?
-                # print("2d confidences", keypoints_2d_conf)
                 if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold and keypoints_2d_conf[12] > conf_threshold:
                     # print("Full body visible")
                     height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.88)
-                    # print("Height", height*100)
-                    # print(cnt)
                     if dist:
                         #takes.append(True)
                         cnt += 1
@@ -102,15 +118,20 @@ class PostProcessor:
                             initial_guess.append(height)
                             
                             # check for head size
-                            face_width = np.mean(flmk_x[14:17] - flmk_x[:3]) / dist
-                            face_height = np.mean(flmk_y[7:10] - flmk_y[32:35]) / dist
-                            initial_guess_face_h.append(face_height)
-                            initial_guess_face_w.append(face_width)
+                            print("GUESSING HEAD SIZE")
+                            face_wr = face_width / dist
+                            face_hr = face_height / dist
+                            print(f"face width and height {face_wr:.2f} {face_hr:.2f}")
+                            print(f"at dist {dist:.2f}")                            
+                            initial_guess_face_h.append(face_hr)
+                            initial_guess_face_w.append(face_wr)
                             
                         elif cnt == self.cnt_initial: 
                             running_avg = np.percentile(initial_guess, 90)
-                            face_width_final = np.percentile(initial_guess_face_w, 90)
-                            face_height_final = np.percentile(initial_guess_face_h, 90)
+                            print("face_w", initial_guess_face_w)
+                            print("face_h", initial_guess_face_h)
+                            face_wr_final = np.percentile(initial_guess_face_w, 90)
+                            face_hr_final = np.percentile(initial_guess_face_h, 90)
                             #running_std = np.std(initial_guess)
                             print("Initial guess", running_avg*100)
                             
@@ -124,9 +145,14 @@ class PostProcessor:
                     key3d *= scale3d
 
                     # translation``
-                    # print(f"z_dist_to_foot {z_dist_foot:.2f}")
-                    key3d[:,2] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
-                
+                    print(f"z_dist_to_foot {z_dist_foot:.2f}")
+                    key3d[2,:] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
+
+                    print(key3d[:, 7])
+                    # update only when the person is detected
+                    dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
+                else:
+                    dist_neck = 0
                 # print(f"Height  {running_avg*100}")
                 # if cnt % 10 == 1 and running_avg > 0:
                 factor = 1.24
@@ -137,17 +163,18 @@ class PostProcessor:
                         label_array['passenger'][0] = 2
                     elif running_avg*factor < 1.85:
                         label_array['passenger'][0] = 3
-                    elif running_avg*factor < 2.05:
+                    elif running_avg*factor < 2.3:
                         label_array['passenger'][0] = 4
                     else:
                         label_array['passenger'][0] = -1
 
-                # print(key3d[7], self.cam_loc)
+                
+                print(dist_face, dist_neck, self.dt.foot_ind)
                 # dist_neck to camera_root
                 if cnt > self.cnt_initial and cnt % 10 == 1:
-                    dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc) 
+                    # dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc) 
                     # print(f"Distance to camera: {dist_neck:.3f} m")
-                    if dist_neck < 0.5:
+                    if dist_face < 0.5:
                         too_close = min(50, too_close + 1)
                     else:
                         too_close = max(0, too_close - 1)
@@ -169,9 +196,9 @@ class PostProcessor:
                     no_person = 0
                     initial_guess = []
                     label_array['distance'] = -1
-
+            print("Distance to camera", dist_face)
             label_array['height'][0] = min(running_avg*124, 999)
-            label_array['distance'][0] = min(dist_neck*100, 9999)
+            label_array['distance'][0] = min(dist_face*100, 9999)
             label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
             label_array['drowsiness'][0] = eye.drowsy_val
             # yield dist_neck

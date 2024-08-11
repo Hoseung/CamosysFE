@@ -9,7 +9,12 @@ import cv2
 from glob import glob
 import time
 class Client:
-    def __init__(self, server_ip, port=65432, frame_width=1024, frame_height=1024):
+    def __init__(self, server_ip, port=65432, 
+                 frame_width=1024, 
+                 frame_height=1024,
+                 camera_height=1.4,
+                 camera_pitch=10,
+                 ):
         self.server_address = (server_ip, port)
         self.sock = None
         self.frame_width = frame_width
@@ -22,7 +27,8 @@ class Client:
         
         self.image_generator = CameraDataGenerator(camera_index=2, 
                                                    crop=(0,1024, 448, 1472))
-        self.post_processor = PostProcessor()
+        self.post_processor = PostProcessor(camera_height = camera_height, 
+                                            camera_pitch = camera_pitch)
         self.postproc_gen = None
         
         self.label_dtype = np.dtype([

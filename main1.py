@@ -5,6 +5,7 @@ from PyQt5.QtCore import *
 import numpy as np
 import threading
 import cv2
+import argparse
 from client import Client
 
 def my_exception_hook(exctype, value, traceback):
@@ -480,6 +481,11 @@ class MainWindow(QWidget):
             flag[0] = 0
 
 def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("height", type=float, default=1.4)
+    parser.add_argument("pitch", type=float, default=-10)
+    args=parser.parse_args()
+    
     app = QApplication(sys.argv)
     app.setStyleSheet("""
                 QWidget{
@@ -488,7 +494,9 @@ def main():
                 }
                 """)
     host_ip = ['169.254.244.73','169.254.31.226'][0]
-    client = Client(server_ip = host_ip) # 
+    client = Client(server_ip = host_ip, 
+                    camera_height=args.height, 
+                    camera_pitch=args.pitch) # 
     # client.setup_socket()
     # client.accept_connection()
 
@@ -502,3 +510,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
