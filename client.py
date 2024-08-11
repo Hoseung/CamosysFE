@@ -32,7 +32,7 @@ class Client:
             ("passenger", np.int8), 
             ("face_landmarks_x", np.uint16, (68)),  # 68 elements of uint16
             ("face_landmarks_y", np.uint16, (68)),  # 68 elements of uint16
-            ("body_keypoints3d", np.uint16, (3, 15)),  # 15 elements of uint16 in 3D
+            ("body_keypoints3d", np.int16, (3, 15)),  # 15 elements of uint16 in 3D
             ("body_keypoints2d", np.uint16, (2, 13)),  # 13 elements of uint16 in 2D
             ("body_keypoints2d_conf", np.uint8, (13,)),  # 13 elements of uint16 in 1D
             ("face_bounding_box", np.uint16, (4,))# 4 elements of uint16
@@ -68,7 +68,7 @@ class Client:
                 # 자른건 소켓으로 보내기
                 # 그릴 때 비율 잘 맞춰서 그리기. 
                 frame = next(self.image_generator)
-                print("Fame sent size", frame.shape)
+                # print("Fame sent size", frame.shape)
                 self.conn.sendall(frame.tobytes())
             
                 label_data = self.conn.recv(self.label_size)
@@ -84,21 +84,19 @@ class Client:
                     self.postproc_gen = self.post_processor.run(label_array)
                         # Prime the generator (advance to the first yield)
                     next(self.postproc_gen)
-                    dist_neck, body_size = 0,0
+                    # dist_neck, body_size = 0,0
                 else:
                     # Get the next result from the generator
                     self.postproc_gen.send(label_array)
 
-                    print(dist_neck)  # Handle the output from the generator
+                    # print(dist_neck)  # Handle the output from the generator
                 
                 ### Finally update the view
                 if not self.frame_queue.full():
                     self.frame_queue.put(frame)
 
-                label_array['distance'] = np.int16(dist_neck * 100)
-                
                 #print("Distance:", label_array['distance'])
-                print(label_array['body_keypoints2d'][0])
+                # print(label_array['body_keypoints2d'][0])
                 if not self.label_data_queue.full():
                     self.label_data_queue.put(label_array)
                     
