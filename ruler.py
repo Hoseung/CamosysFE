@@ -105,23 +105,26 @@ class DistanceTriangle():
         feet = [keypoints_2d[:,11], keypoints_2d[:,12]]
         heights = np.array([self.get_obj_size(foot, p_head, verbose=False) 
                             for foot in feet])
-        if max(heights) > 1.2 * min(heights):
+        if max(heights) > 1.1 * min(heights):
             # If uneven, take larger one
             self.foot_ind = np.argmax(heights)
             height = heights[self.foot_ind]
             dist = self.dist_camroot_to_foot(feet[self.foot_ind][1])
+            # print("[cal_body_size] Height", height, "Dist", dist)
         else:
             height = np.mean(heights)
             dist = 0.5*(self.dist_camroot_to_foot(feet[0][1]) + \
                 self.dist_camroot_to_foot(feet[1][1]))
             self.foot_ind = 0
-        print("[cal_body_size] Height", height, "Dist", dist)
+            # print("[cal_body_size] Height", height, "Dist", dist, "MEAN")
+        
         return height, dist
     
     def height_taken(self, keypoints_2d, take_frac = 0.86):
         undistorted = np.array([self.undistort_normed(p) for p in keypoints_2d.T]).T
         height_pixel, bone_sum_pixel = get_bone_length_sum(undistorted)
         height, dist = self.cal_body_size(undistorted)
+        # print("[height_taken] Measured height", height_pixel, "bone_sum", bone_sum_pixel)
         if take_frac * height_pixel > bone_sum_pixel:
             return height, dist
         else:
@@ -148,6 +151,8 @@ def get_bone_length_sum(keypoints_2d):
     # print("r_torso, r_thigh, r_calf", r_torso, r_thigh, r_calf)
     head_to_lfoot = np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,11])
     head_to_rfoot = np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,12])
+    # print("keypoints", keypoints_2d[:,0], keypoints_2d[:,11])
+    # print("head_to_lfoot")
     height_pixel = take_avg_or_larger(head_to_lfoot, head_to_rfoot)
     bone_sum_pixel = take_avg_or_larger(l_height, r_height)
     
