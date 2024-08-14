@@ -28,7 +28,8 @@ class Client:
         self.image_generator = CameraDataGenerator(camera_index=0, 
                                                    crop=(56,1080, 448, 1472))
         self.post_processor = PostProcessor(camera_height = camera_height, 
-                                            camera_pitch = camera_pitch)
+                                            camera_pitch = camera_pitch,
+                                            height_factor=1.1)
         self.postproc_gen = None
         
         self.label_dtype = np.dtype([
@@ -70,12 +71,12 @@ class Client:
             self.sock.close()
 
     def receive_frame(self):
-        flist = glob("./test11/frame*.jpg")
+        flist = glob("./test12/frame*.jpg")
         flist.sort()
-        lablels = pickle.load(open("./test11/label_data.pkl", "rb"))
+        labels = pickle.load(open("./test12/label_data.pkl", "rb"))
 
-        for i, label_array in enumerate(lablels):
-            time.sleep(0.04)
+        for i, label_array in enumerate(labels):
+            time.sleep(0.01)
             frame = cv2.imread(flist[i])
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             

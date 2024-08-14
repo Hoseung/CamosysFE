@@ -424,6 +424,7 @@ class MainWindow(QWidget):
             else:
                 color = "rgb(255,255,255)"
 
+
             # Set the color using a stylesheet
             self.lbl_txt_2_1_1_2.setStyleSheet(f"color: {color}; font-size: 40px; font-weight: bold;")
             self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
@@ -440,7 +441,6 @@ class MainWindow(QWidget):
                 font-weight: bold;
                 """
             )
-
             self.lbl_img_3_3.setPixmap(QPixmap(f'icon/Property 1=Age 1~6, Selected={"On" if label_data["passenger"][0] == 1 else "Off"}.png'))
             self.lbl_txt_3_3.setStyleSheet(
                 f"""

@@ -4,7 +4,8 @@ from eye import Eye, std2d
 
 class PostProcessor:
     def __init__(self, image_width=1024, image_height=1024,
-                 camera_height=1.4, camera_pitch=10):
+                 camera_height=1.4, camera_pitch=10, height_factor=1.2):
+        self.height_factor = height_factor
         self.camera_height=camera_height
         self.dt = DistanceTriangle(fov_v=90,
                                    image_width=image_width,
@@ -20,11 +21,11 @@ class PostProcessor:
 
         # upper body running mean
         self.alpha = 0.01
-        self.cnt_initial = 40
+        self.cnt_initial = 20
                 
         self.foot_ind3d = [3,6]
-        self.area_lmin = 200
-        self.area_rmax = image_width - 200
+        self.area_lmin = 0
+        self.area_rmax = image_width 
         
     def run(self, label_array):
         initial_guess = []
@@ -38,7 +39,7 @@ class PostProcessor:
         scale3d = 1.0
         no_person = 0
         # dist_neck = -1
-        conf_threshold = 70
+        conf_threshold = 60
         
         eye = Eye()
         
@@ -56,12 +57,13 @@ class PostProcessor:
             # passenger = label_array['passenger']
             
             i += 1
-            cnt += 1
+            # cnt += 1
             face_wr_final = 90 
             face_hr_final = 100
             
             dist_face = 0
             # Valid face
+            print("CNT", cnt)
             if box is not None and box[0] > self.area_lmin and box[3] < self.area_rmax:
                 if any(flmk_x[36:42] == 0) or any(flmk_y[36:42] == 0):
                     # print("Invalid face landmarks")
@@ -85,17 +87,9 @@ class PostProcessor:
                     dist_face = (eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw) * 0.7
                     # print(face_height, face_width, dist_fh, dist_fw, dist_face)
                 
-                # smoothing 2d keypoints
-                # if smoothed_keypoints_2d is None:
-                #     smoothed_keypoints_2d = keypoints_2d[:,:2]
-                
-                # else:
-                #     smoothed_keypoints_2d = self.alpha_2d * keypoints_2d[:,:2] + (1 - self.alpha_2d) * smoothed_keypoints_2d
-                #     keypoints_2d[:,:2] = smoothed_keypoints_2d
-                
                 if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold and keypoints_2d_conf[12] > conf_threshold:
-                    # print("Full body visible")
-                    height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.88)
+                    print("Full body visible")
+                    height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.95)
                     if dist:
                         #takes.append(True)
                         cnt += 1
@@ -134,40 +128,39 @@ class PostProcessor:
                             face_wr_final = np.percentile(initial_guess_face_w, 90)
                             face_hr_final = np.percentile(initial_guess_face_h, 90)
                             #running_std = np.std(initial_guess)
-                            # print("Initial guess", running_avg*100)
+                            print("Initial guess", running_avg*100)
                             
                         z_dist_foot = dist
                         
                     else:
                         # print("Unreliable Height measurement222")
-                        continue
+                        pass
                         
                     # scale
                     key3d *= scale3d
 
                     # translation``
-                    # print(f"z_dist_to_foot {z_dist_foot:.2f}")
                     key3d[2,:] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
 
-                    # print(key3d[:, 7])
                     # update only when the person is detected
                     dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
                 else:
                     dist_neck = 0
                 # print(f"Height  {running_avg*100}")
                 # if cnt % 10 == 1 and running_avg > 0:
-                factor = 1.24
-                if running_avg > 0:
-                    if running_avg*factor > 0.40 and running_avg*factor < 1.20:
-                        label_array['passenger'][0] = 1
-                    elif running_avg*factor < 1.58:
-                        label_array['passenger'][0] = 2
-                    elif running_avg*factor < 1.85:
-                        label_array['passenger'][0] = 3
-                    elif running_avg*factor < 2.3:
-                        label_array['passenger'][0] = 4
-                    else:
-                        label_array['passenger'][0] = -1
+                
+                # if running_avg > 0:
+                #     print("SETTING HEIGHT - VALID")
+                #     if running_avg*self.height_factor > 0.40 and running_avg*self.height_factor < 1.20:
+                #         label_array['passenger'][0] = 1
+                #     elif running_avg*self.height_factor < 1.60:
+                #         label_array['passenger'][0] = 2
+                #     elif running_avg*self.height_factor < 1.85:
+                #         label_array['passenger'][0] = 3
+                #     elif running_avg*self.height_factor < 2.3:
+                #         label_array['passenger'][0] = 4
+                #     else:
+                #         label_array['passenger'][0] = -1
 
             else: # when no person is detected
                 no_person += 1
@@ -177,13 +170,33 @@ class PostProcessor:
                     label_array['height'][0] = 0
                     cnt = 0
                     running_avg = 0
-                    smoothed_keypoints_2d = None
+                    print("RESETTING HEIGHT because NO_PERSON")
                     no_person = 0
                     initial_guess = []
                     label_array['distance'] = -1
+                    
+            if running_avg >= 0:
+                print("SETTING HEIGHT - VALID")
+                if running_avg*self.height_factor > 0.40 and running_avg*self.height_factor < 1.20:
+                    label_array['passenger'][0] = 1
+                elif running_avg*self.height_factor < 1.60:
+                    print("SETTING HEIGHT - 2")
+                    print("running_avg*self.height_factor", running_avg*self.height_factor)
+                    label_array['passenger'][0] = 2
+                elif running_avg*self.height_factor < 1.85:
+                    label_array['passenger'][0] = 3
+                elif running_avg*self.height_factor < 2.3:
+                    label_array['passenger'][0] = 4
+                else:
+                    label_array['passenger'][0] = -1
             # print("Distance to camera", dist_face)
-            label_array['height'][0] = min(running_avg*124, 999)
+            
+            print("RUNNING AVG", running_avg)
+            
+            label_array['height'][0] = min(running_avg*100*self.height_factor, 999)
             label_array['distance'][0] = min(dist_face*100, 9999)
             label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
             label_array['drowsiness'][0] = eye.drowsy_val
+            
+            print("HEIGHT CLASS this time", label_array['passenger'][0])
             # yield dist_neck
