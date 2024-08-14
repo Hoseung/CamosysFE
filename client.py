@@ -25,8 +25,8 @@ class Client:
             '=h b b b b B b 68H 68H 15H 15H 15H 13H 13H 13B 4H')
         self.running = True
         
-        self.image_generator = CameraDataGenerator(camera_index=2, 
-                                                   crop=(0,1024, 448, 1472))
+        self.image_generator = CameraDataGenerator(camera_index=0, 
+                                                   crop=(56,1080, 448, 1472))
         self.post_processor = PostProcessor(camera_height = camera_height, 
                                             camera_pitch = camera_pitch)
         self.postproc_gen = None
@@ -69,10 +69,10 @@ class Client:
         if self.sock:
             self.sock.close()
 
-    def receive_frame_(self):
-        flist = glob("./test7/frame*.jpg")
+    def receive_frame(self):
+        flist = glob("./test10/frame*.jpg")
         flist.sort()
-        lablels = pickle.load(open("./test7/label_data.pkl", "rb"))
+        lablels = pickle.load(open("./test10/label_data.pkl", "rb"))
 
         for i, label_array in enumerate(lablels):
             time.sleep(0.04)
@@ -107,7 +107,7 @@ class Client:
             self.frame_queue.put(frame)
             self.label_data_queue.put(label_array)
 
-    def receive_frame(self):
+    def receive_frame_(self):
         save = []
         cnt = 0
         bad = 0
@@ -120,7 +120,7 @@ class Client:
                 # 그릴 때 비율 잘 맞춰서 그리기. 
                 frame, frame_org = next(self.image_generator)
                 
-                # cv2.imwrite(f"frame{cnt:03d}.jpg", frame)
+                cv2.imwrite(f"frame{cnt:04d}.jpg", frame)
                 # print("Fame sent size", frame.shape)
                 self.conn.sendall(frame.tobytes())
             
@@ -155,8 +155,8 @@ class Client:
                     self.label_data_queue.put(label_array)
                 
                 print(f"Count -- {cnt}")
-                # if cnt % 100 == 0:
-                #     pickle.dump(save, open("label_data.pkl", "wb"))
+                if cnt % 100 == 0:
+                    pickle.dump(save, open("label_data.pkl", "wb"))
                     
             except Exception as e:
                 print(f"Error receiving data: {e}")
