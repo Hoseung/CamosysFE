@@ -30,7 +30,9 @@ def eye_aspect_ratio(eye):
     A = euclidean_dist(eye[1], eye[5])
     B = euclidean_dist(eye[2], eye[4])
     C = euclidean_dist(eye[0], eye[3])
-
+    if C < A or C < B:
+        return 0.5, 0.5, 0.5
+    
     ear = (alpha * A + beta * B) / (2.0 * C)
 
     left_ear = alpha * A / C
