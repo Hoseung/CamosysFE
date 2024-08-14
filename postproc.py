@@ -24,8 +24,8 @@ class PostProcessor:
         self.cnt_initial = 20
                 
         self.foot_ind3d = [3,6]
-        self.area_lmin = 0
-        self.area_rmax = image_width 
+        self.area_lmin = 10
+        self.area_rmax = image_width -10
         
     def run(self, label_array):
         initial_guess = []
@@ -137,10 +137,12 @@ class PostProcessor:
                         pass
                         
                     # scale
-                    key3d *= scale3d
-
+                    print("key3d", key3d[2,:])
+                    key3d[2,:] *= scale3d
+                    print("key3d after scale", key3d[2,:])
                     # translation``
                     key3d[2,:] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
+                    print("key3d after translation", key3d[2,:])
 
                     # update only when the person is detected
                     dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
@@ -148,23 +150,10 @@ class PostProcessor:
                     dist_neck = 0
                 # print(f"Height  {running_avg*100}")
                 # if cnt % 10 == 1 and running_avg > 0:
-                
-                # if running_avg > 0:
-                #     print("SETTING HEIGHT - VALID")
-                #     if running_avg*self.height_factor > 0.40 and running_avg*self.height_factor < 1.20:
-                #         label_array['passenger'][0] = 1
-                #     elif running_avg*self.height_factor < 1.60:
-                #         label_array['passenger'][0] = 2
-                #     elif running_avg*self.height_factor < 1.85:
-                #         label_array['passenger'][0] = 3
-                #     elif running_avg*self.height_factor < 2.3:
-                #         label_array['passenger'][0] = 4
-                #     else:
-                #         label_array['passenger'][0] = -1
 
             else: # when no person is detected
                 no_person += 1
-                if no_person > 20:
+                if no_person > 10:
                     # print("No person detected!")
                     label_array['passenger'][0] = 0
                     label_array['height'][0] = 0
@@ -179,13 +168,13 @@ class PostProcessor:
                 print("SETTING HEIGHT - VALID")
                 if running_avg*self.height_factor > 0.40 and running_avg*self.height_factor < 1.20:
                     label_array['passenger'][0] = 1
-                elif running_avg*self.height_factor < 1.60:
+                elif running_avg*self.height_factor >= 1.2 and running_avg*self.height_factor < 1.60:
                     print("SETTING HEIGHT - 2")
                     print("running_avg*self.height_factor", running_avg*self.height_factor)
                     label_array['passenger'][0] = 2
-                elif running_avg*self.height_factor < 1.85:
+                elif running_avg*self.height_factor >= 1.60 and running_avg*self.height_factor < 1.85:
                     label_array['passenger'][0] = 3
-                elif running_avg*self.height_factor < 2.3:
+                elif running_avg*self.height_factor >= 1.85 and running_avg*self.height_factor < 2.3:
                     label_array['passenger'][0] = 4
                 else:
                     label_array['passenger'][0] = -1

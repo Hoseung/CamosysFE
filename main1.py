@@ -353,8 +353,8 @@ class MainWindow(QWidget):
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             
             
-            area_lmin = 100
-            area_rmax = 1024 - 100
+            area_lmin = 10
+            area_rmax = 1024 - 10
             
             box = label_data["face_bounding_box"][0]
             cv2.rectangle(frame, (int((fhd_shift_x+area_lmin)*frame_width_resize_ratio),
@@ -380,8 +380,9 @@ class MainWindow(QWidget):
                 color2 = (46, 234, 255)
                 radius = 5
 
-                for connection, conf in zip(connections_2d, label_data["body_keypoints2d_conf"][0]):
-                    if conf > draw_conf_thr:
+                for connection in connections_2d:
+                    if label_data["body_keypoints2d_conf"][0][connection[0]] > draw_conf_thr and \
+                       label_data["body_keypoints2d_conf"][0][connection[1]] > draw_conf_thr:
                         cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
                                         (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
                                         (0, 255, 0), 2)
@@ -431,7 +432,7 @@ class MainWindow(QWidget):
             self.lbl_txt_2_1_1_6.setText(str(label_data['height'][0]))
             # bodysize
             self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Property 1={str(label_data["drowsiness"][0])}, Selected=Off.png'))
-            self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0] else "Off"}.png'))
+            self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0]==1 else "Off"}.png'))
             self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0], 2)) + "%)")
             self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
