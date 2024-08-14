@@ -70,9 +70,9 @@ class Client:
             self.sock.close()
 
     def receive_frame(self):
-        flist = glob("./test10/frame*.jpg")
+        flist = glob("./test11/frame*.jpg")
         flist.sort()
-        lablels = pickle.load(open("./test10/label_data.pkl", "rb"))
+        lablels = pickle.load(open("./test11/label_data.pkl", "rb"))
 
         for i, label_array in enumerate(lablels):
             time.sleep(0.04)
@@ -159,7 +159,10 @@ class Client:
                     pickle.dump(save, open("label_data.pkl", "wb"))
                     
             except Exception as e:
+                pickle.dump(save, open("label_data.pkl", "wb"))
                 print(f"Error receiving data: {e}")
+                print("_____________________")
+                print("Pickle saved")
                 self.cleanup()
                 break
 
