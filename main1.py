@@ -338,6 +338,7 @@ class MainWindow(QWidget):
             
             fhd_shift_x = 448
             fhd_shift_y = 56
+            draw_conf_thr = 50
 
             frame = self.client.frame_queue.get()
             if frame_width_resize != frame.shape[1] or frame_height_resize != frame.shape[0]:
@@ -379,16 +380,18 @@ class MainWindow(QWidget):
                 color2 = (46, 234, 255)
                 radius = 5
 
-                for connection in connections_2d:
-                    cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
-                                    (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
-                                    (0, 255, 0), 2)
+                for connection, conf in zip(connections_2d, label_data["body_keypoints2d_conf"][0]):
+                    if conf > draw_conf_thr:
+                        cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
+                                        (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
+                                        (0, 255, 0), 2)
 
                 # Draw the keypoints
                 for i in range(len(bk2d_x)):
-                    cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
-                    cv2.putText(frame, f"{bk_3dx[sort2d_to_3d[i]]}  {bk_3dy[sort2d_to_3d[i]]}  {bk_3dz[sort2d_to_3d[i]]}", 
-                                (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                    if label_data["body_keypoints2d_conf"][0][i] > draw_conf_thr:
+                        cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
+                        cv2.putText(frame, f"{bk_3dx[sort2d_to_3d[i]]}  {bk_3dy[sort2d_to_3d[i]]}  {bk_3dz[sort2d_to_3d[i]]}", 
+                                    (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
                 # face_landmarks
                 face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
@@ -518,8 +521,8 @@ def main():
     client = Client(server_ip = host_ip, 
                     camera_height=args.height, 
                     camera_pitch=args.pitch) # 
-    client.setup_socket()
-    client.accept_connection()
+    # client.setup_socket()
+    # client.accept_connection()
 
     use = ["distance", "eye_openness", "drowsiness", "phoneuse", "phone_use_conf", "passenger", "face_landmarks_x", "face_landmarks_y",
            "body_keypoints_x", "body_keypoints_y", "body_keypoints_z", "joint_lengths", "face_bounding_box"]
