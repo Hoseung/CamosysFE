@@ -543,7 +543,8 @@ def main():
     host_ip = ['169.254.244.73','169.254.31.226'][0]
     client = Client(server_ip = host_ip, 
                     camera_height=args.height, 
-                    camera_pitch=args.pitch) # 
+                    camera_pitch=args.pitch,
+                    height_factor=1.17) #
     # client.setup_socket()
     # client.accept_connection()
 
