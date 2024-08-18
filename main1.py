@@ -38,6 +38,9 @@ class MainWindow(QWidget):
         self.use = use
         self.draw_alpha = 0.3
         self.box_old = None
+        self.bk2d_x_old = None
+        self.bk2d_y_old = None
+        self.phone_use = None
         
         self.frame_width_resize = 1333 # 1333 -> 16:9
         self.frame_height_resize = 750
@@ -45,8 +48,7 @@ class MainWindow(QWidget):
         self.fhd_shift_y = 56
         self.draw_conf_thr = 50
         
-        self.bk2d_x_old = None
-        self.bk2d_y_old = None
+
         # self.post = Postprocess()
 
         self.setWindowTitle("Ti DEMO")
@@ -453,9 +455,22 @@ class MainWindow(QWidget):
             self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
             self.lbl_txt_2_1_1_6.setText(str(label_data['height'][0]))
             # bodysize
+            
+            
             self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Property 1={str(label_data["drowsiness"][0])}, Selected=Off.png'))
-            self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0]==1 else "Off"}.png'))
-            self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0], 2)) + "%)")
+            
+            # Phone use
+            if self.phone_use is None:
+                self.phone_use = 1 if label_data["phoneuse"][0] == 1 else 0
+            _phone_use = 1 if label_data["phoneuse"][0] == 1 else 0
+            self.phone_use = self.draw_alpha * _phone_use + (1 - self.draw_alpha) * self.phone_use
+            is_using_phone = self.phone_use > 0.8
+            self.lbl_img_3_1.setPixmap(QPixmap(f'icon/PhoneUse{"On" if is_using_phone else "Off"}.png'))
+            if is_using_phone:
+                phone_conf = label_data["phone_use_conf"][0]
+            else:
+                phone_conf = 0
+            self.lbl_txt_3_1.setText("Phone use (" + str(round(phone_conf,2)) + "%)")      
             self.lbl_img_3_2.setPixmap(QPixmap(f'icon/PassengerEmpty{"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
                 f"""
