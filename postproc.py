@@ -188,7 +188,7 @@ class PostProcessor:
                 label_array['height'][0] = 0
                 label_array['distance'][0] = -1
                 label_array['eye_openness'][0] = 0
-                label_array['drowsiness'][0] = 0
+                label_array['drowsiness'][0] = -1
             
             label_array['passenger'][0] = self.class_tracker.update_state(passenger_class)
             

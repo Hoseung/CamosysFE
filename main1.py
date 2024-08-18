@@ -457,7 +457,7 @@ class MainWindow(QWidget):
             # bodysize
             
             
-            self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Property 1={str(label_data["drowsiness"][0])}, Selected=Off.png'))
+            self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
             
             # Phone use
             if self.phone_use is None:
