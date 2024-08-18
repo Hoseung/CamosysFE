@@ -303,16 +303,17 @@ class MainWindow(QWidget):
                                   int(self.frame_height_resize)), 
                           (105, 105, 105), 3)
             
-            # Face bounding box
-            bbox = label_data["face_bounding_box"][0]
-            if bbox is not None and bbox[0] > area_lmin and bbox[3] < area_rmax:
-                if self.box_old is None:
-                    self.box_old = bbox
-                bbox = self.draw_alpha * bbox + (1 - self.draw_alpha) * self.box_old
-                self.box_old = bbox
-                # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
-                # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
+            # # Face bounding box
+            # bbox = label_data["face_bounding_box"][0]
+            # if bbox is not None and bbox[0] > area_lmin and bbox[3] < area_rmax:
+            #     if self.box_old is None:
+            #         self.box_old = bbox
+            #     bbox = self.draw_alpha * bbox + (1 - self.draw_alpha) * self.box_old
+            #     self.box_old = bbox
+            #     # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
+            #     # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
                 
+            if all(label_data["body_keypoints2d"][0][0] != -1):
                 # body_keypoints
                 bk2d_x = np.round((label_data["body_keypoints2d"][0][0] + self.fhd_shift_x) * frame_width_resize_ratio).astype(int)
                 bk2d_y = np.round((label_data["body_keypoints2d"][0][1] + self.fhd_shift_y) * frame_height_resize_ratio).astype(int)
@@ -338,7 +339,7 @@ class MainWindow(QWidget):
 
                 for connection in connections_2d:
                     if label_data["body_keypoints2d_conf"][0][connection[0]] > self.draw_conf_thr and \
-                       label_data["body_keypoints2d_conf"][0][connection[1]] > self.draw_conf_thr:
+                        label_data["body_keypoints2d_conf"][0][connection[1]] > self.draw_conf_thr:
                         cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
                                         (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
                                         (0, 255, 0), 2)
@@ -349,8 +350,17 @@ class MainWindow(QWidget):
                         cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
                         cv2.putText(frame, f"{bk_3dx[sort2d_to_3d[i]]}  {bk_3dy[sort2d_to_3d[i]]}  {bk_3dz[sort2d_to_3d[i]]}", 
                                     (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-
+            # Face bounding box
+            bbox = label_data["face_bounding_box"][0]
+            if bbox is not None and bbox[0] > area_lmin and bbox[3] < area_rmax:
+                if self.box_old is None:
+                    self.box_old = bbox
+                bbox = self.draw_alpha * bbox + (1 - self.draw_alpha) * self.box_old
+                self.box_old = bbox
+                # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
+                # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
                 # face_landmarks
+                
             if label_data["face_landmarks_x"][0][0] == -1:
                 self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
             else:
@@ -486,13 +496,13 @@ def main():
                     background-color: rgb(30, 30, 30);
                 }
                 """)
-    host_ip = '0.0.0.0'
+    host_ip = '192.168.100.3'
     client = Client(server_ip = host_ip, 
                     camera_height=args.height, 
                     camera_pitch=args.pitch,
                     height_factor=1.17) #
-    # client.setup_socket()
-    # client.accept_connection()
+    client.setup_socket()
+    client.accept_connection()
 
     use = ["distance", "eye_openness", "drowsiness", "phoneuse", "phone_use_conf", "passenger", "face_landmarks_x", "face_landmarks_y",
            "body_keypoints_x", "body_keypoints_y", "body_keypoints_z", "joint_lengths", "face_bounding_box"]
