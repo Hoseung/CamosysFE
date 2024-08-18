@@ -1,5 +1,6 @@
 *.ipynb_checkpoints
 */.ipynb_checkpoints/*
-*__pyc_*
-*.png
+*__pycache__/*
 *.jpg
+*.so
+*.pyi
