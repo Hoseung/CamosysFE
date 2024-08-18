@@ -2,8 +2,8 @@ import math
 import yaml
 import cv2
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt 
+# from mpl_toolkits.mplot3d import Axes3D
+# import matplotlib.pyplot as plt 
 from typing import List, Tuple
 from constants import connections_2d, connections_3d
 
@@ -110,82 +110,82 @@ def angle_between_vectors(p0, p1, p2, p3):
     return angle_degrees
 
 
-class Visualizer:
-    def __init__(self, elev=130, azim=90):
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(111, projection='3d')
-        self.ax.set_xlabel('X')
-        self.ax.set_ylabel('Y')
-        self.ax.set_zlabel('Z')
+# class Visualizer:
+#     def __init__(self, elev=130, azim=90):
+#         self.fig = plt.figure()
+#         self.ax = self.fig.add_subplot(111, projection='3d')
+#         self.ax.set_xlabel('X')
+#         self.ax.set_ylabel('Y')
+#         self.ax.set_zlabel('Z')
 
-        self.ax.set_xlim(-50, 50)
-        self.ax.set_ylim(-50, 50)
-        self.ax.set_zlim(-50, 50)
-        self.ax.view_init(elev=elev, azim=azim)
+#         self.ax.set_xlim(-50, 50)
+#         self.ax.set_ylim(-50, 50)
+#         self.ax.set_zlim(-50, 50)
+#         self.ax.view_init(elev=elev, azim=azim)
         
-        self.n_points = 15
-        self.init_plot()
-        # Set plot title
-        self.ax.set_title('3D Keypoints with Connections')
+#         self.n_points = 15
+#         self.init_plot()
+#         # Set plot title
+#         self.ax.set_title('3D Keypoints with Connections')
 
-    def init_plot(self):
-        self.scatters = self.ax.scatter(np.random.random(self.n_points) - 0.5, 
-                                       np.random.random(self.n_points) - 0.5, 
-                                       np.random.random(self.n_points) - 0.5, 
-                                       marker='o')
+#     def init_plot(self):
+#         self.scatters = self.ax.scatter(np.random.random(self.n_points) - 0.5, 
+#                                        np.random.random(self.n_points) - 0.5, 
+#                                        np.random.random(self.n_points) - 0.5, 
+#                                        marker='o')
 
-        # Plot lines between the connected keypoints
-        self.lines = []
-        self.texts = []
-        for connection in connections_3d:
-            x_values = [0.01, 0.02]
-            y_values = [0.01, 0.02]
-            z_values = [0.01, 0.02]
-            line = self.ax.plot(x_values, y_values, z_values, 'r-')
-            self.lines.append(line[0])
+#         # Plot lines between the connected keypoints
+#         self.lines = []
+#         self.texts = []
+#         for connection in connections_3d:
+#             x_values = [0.01, 0.02]
+#             y_values = [0.01, 0.02]
+#             z_values = [0.01, 0.02]
+#             line = self.ax.plot(x_values, y_values, z_values, 'r-')
+#             self.lines.append(line[0])
         
-            point1, point2 = connection
-            #x_values = [kpts[point1, 0], kpts[point2, 0]]
-            #y_values = [kpts[point1, 1], kpts[point2, 1]]
-            #z_values = [kpts[point1, 2], kpts[point2, 2]]        
-            # text on plot line
-            self.ax.text(np.mean(x_values), np.mean(y_values), np.mean(z_values), \
-                         f'{int(np.linalg.norm(0.02 - 0.01)*100)} cm', \
-                            size=10, zorder=1, color='b')
+#             point1, point2 = connection
+#             #x_values = [kpts[point1, 0], kpts[point2, 0]]
+#             #y_values = [kpts[point1, 1], kpts[point2, 1]]
+#             #z_values = [kpts[point1, 2], kpts[point2, 2]]        
+#             # text on plot line
+#             self.ax.text(np.mean(x_values), np.mean(y_values), np.mean(z_values), \
+#                          f'{int(np.linalg.norm(0.02 - 0.01)*100)} cm', \
+#                             size=10, zorder=1, color='b')
           
-    def visualize_and_save_keypoints(self, kpts: np.ndarray, connections: List[Tuple[int, int]],
-                                     plot_filename: str = None, show_text=False):
-        """
-        Visualizes 3D keypoints with connections and saves the plot and keypoints data.
+#     def visualize_and_save_keypoints(self, kpts: np.ndarray, connections: List[Tuple[int, int]],
+#                                      plot_filename: str = None, show_text=False):
+#         """
+#         Visualizes 3D keypoints with connections and saves the plot and keypoints data.
 
-        :param keypoints: A numpy array of shape (n, 3) representing 3D keypoints.
-        :param connections: A list of tuples where each tuple contains two indices of keypoints to be connected.
-        :param plot_filename: The filename to save the plot (e.g., '3d_keypoints_with_connections.png').
-        :param data_filename: The filename to save the keypoints data (e.g., 'keypoints.npy').
-        """
-        # Visualize Keypoints and Connections
-        self.scatters._offsets3d = (kpts[:, 0], kpts[:, 1], kpts[:, 2])
+#         :param keypoints: A numpy array of shape (n, 3) representing 3D keypoints.
+#         :param connections: A list of tuples where each tuple contains two indices of keypoints to be connected.
+#         :param plot_filename: The filename to save the plot (e.g., '3d_keypoints_with_connections.png').
+#         :param data_filename: The filename to save the keypoints data (e.g., 'keypoints.npy').
+#         """
+#         # Visualize Keypoints and Connections
+#         self.scatters._offsets3d = (kpts[:, 0], kpts[:, 1], kpts[:, 2])
 
-        for line, (point1, point2) in zip(self.lines, connections):
-            line.set_data_3d((kpts[point1, 0], kpts[point2, 0]),
-                             (kpts[point1, 1], kpts[point2, 1]),
-                             (kpts[point1, 2], kpts[point2, 2]))
+#         for line, (point1, point2) in zip(self.lines, connections):
+#             line.set_data_3d((kpts[point1, 0], kpts[point2, 0]),
+#                              (kpts[point1, 1], kpts[point2, 1]),
+#                              (kpts[point1, 2], kpts[point2, 2]))
             
-        if show_text:
-            for connection in connections:
-                point1, point2 = connection
-                x_values = [kpts[point1, 0], kpts[point2, 0]]
-                y_values = [kpts[point1, 1], kpts[point2, 1]]
-                z_values = [kpts[point1, 2], kpts[point2, 2]]        
-                # text on plot line
-                self.ax.text(np.mean(x_values), np.mean(y_values), np.mean(z_values), \
-                            f'{int(np.linalg.norm(kpts[point1] - kpts[point2])*100)} cm', \
-                                size=10, zorder=1, color='b')
+#         if show_text:
+#             for connection in connections:
+#                 point1, point2 = connection
+#                 x_values = [kpts[point1, 0], kpts[point2, 0]]
+#                 y_values = [kpts[point1, 1], kpts[point2, 1]]
+#                 z_values = [kpts[point1, 2], kpts[point2, 2]]        
+#                 # text on plot line
+#                 self.ax.text(np.mean(x_values), np.mean(y_values), np.mean(z_values), \
+#                             f'{int(np.linalg.norm(kpts[point1] - kpts[point2])*100)} cm', \
+#                                 size=10, zorder=1, color='b')
 
-        #fig.canvas.draw_idle()
-        plt.pause(0.001)
-        if plot_filename is not None:
-            plt.savefig(plot_filename)
+#         #fig.canvas.draw_idle()
+#         plt.pause(0.001)
+#         if plot_filename is not None:
+#             plt.savefig(plot_filename)
 
 def image_to_world_coordinates(u, v, Z, K_inv):
     uv1 = np.array([u, v, 1])

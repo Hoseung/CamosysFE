@@ -10,13 +10,13 @@ def euclidean_dist(a, b):
 
 def eye_aspect_ratio(eye):
     # print("EYE =====>", eye)
-    alpha = 1.5
-    beta = 1.5
+    alpha = 1.7
+    beta = 1.7
     A = euclidean_dist(eye[1], eye[5])
     B = euclidean_dist(eye[2], eye[4])
     C = euclidean_dist(eye[0], eye[3])
-    if A*B*C==0 or C < A or C < B or np.isfinite(A)*np.isfinite(B)*np.isfinite(C) == False:
-        return 0.5, 0.5, 0.5
+    if C==0 or C < A or C < B or np.isfinite(A)*np.isfinite(B)*np.isfinite(C) == False:
+        return 0.4, 0.4, 0.4
     
     ear = (alpha * A + beta * B) / (2.0 * C)
 
@@ -33,26 +33,47 @@ def final_ear(lmks):
 
     leftEAR, left_, _ = eye_aspect_ratio(leftEye)
     rightEAR, _, right_ = eye_aspect_ratio(rightEye)
-    ear = (leftEAR + rightEAR) / 2.0
+    ear = max((leftEAR + rightEAR) / 2.0 - 0.15, 0.01)
     return (ear, leftEye, rightEye, left_, right_)
 
 
 class Eye:
-    def __init__(self, drowsy_nmax=20):
+    def __init__(self, drowsy_nmax=60):
         self.EAR = 0
         self.EARs = []
         self.drowsy_val = 0
         self.drowsy_nmax = drowsy_nmax
+        self.alpha = 0.3
+        self._mean_ear = 0.5
+        self._mean_arr = []
+        self.mean_nmax = 60
+
+    def reset(self):
+        self.EAR = 0
+        self.EARs = []
+        self.drowsy_val = 0
+        self._mean_ear = 0.5
+        self._mean_arr = []
 
     def update_EAR(self, lmks):
         """
         keep last N EAR and check drowsiness
         """
-        self.EAR = float(final_ear(lmks)[0])
+        old_EAR = self.EAR
+        self.EAR = self.alpha * float(final_ear(lmks)[0]) + (1 - self.alpha) * old_EAR
+        
+        if self.EAR > 0.2 and len(self._mean_arr) < self.mean_nmax:
+            self._mean_arr.append(self.EAR)
+        if len(self._mean_arr) == self.mean_nmax:
+            self._mean_ear = np.percentile(self._mean_arr, 80)
+        # print("SELF.MEAN", self._mean_ear)
         # print("EYE", self.EAR)
         self.EARs.append(self.EAR)
         while len(self.EARs) > self.drowsy_nmax:
             self.EARs.pop(0)
+            
+        # while len(self._mean_arr) > 30:
+        #     self._mean_arr.pop(0)
 
         # print("len(self.EARs)", len(self.EARs))
         if len(self.EARs) > 5:
@@ -64,7 +85,7 @@ class Eye:
         """
         # TODO | OverflowError: cannot convert float infinity to integer
         # try:
-        self.drowsy_val = (1 - (min(20, int(20 * np.mean(self.EARs) / 0.4)) / 20))*6
+        self.drowsy_val = (1 - (min(self.drowsy_nmax, int(self.drowsy_nmax * np.mean(self.EARs) / self._mean_ear)) / self.drowsy_nmax))*6
     
     def reset_EAR(self):
         self.EAR_min = 1

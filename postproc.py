@@ -61,95 +61,95 @@ class PostProcessor:
             i += 1
             # cnt += 1
             # FACE            
-            empty = any(flmk_x == -1) or any(flmk_y == -1)
-            # print("EMPTY", empty)
+            no_face = any(flmk_x == -1) or any(flmk_y == -1)
+            empty = any(keypoints_2d[0] == -1)
             # Face detected in the AOI
-            if not empty:
+            if not no_face:
                 eye.update_EAR((flmk_x, flmk_y))
                 face.update_face_wh(flmk_x, flmk_y)
                 # print("updated face", face.face_hr, face.face_wr)
                 if face.face_hr is not None and face.face_wr is not None:
                     face.update_face_dist(flmk_x, flmk_y)
                 
-                # print("Full body visible")
-                if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold or keypoints_2d_conf[12] > conf_threshold:
-                    ind_ok = np.argmax([keypoints_2d_conf[11], keypoints_2d_conf[12]])
-                    self.dt.foot_ind = ind_ok
-                    # print("Foot index", self.dt.foot_ind)
-                    height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.85)
-                    
-                    if dist:
-                        #takes.append(True)
-                        cnt += 1
-                        face.update(dist, flmk_x, flmk_y)
-                        if cnt > self.cnt_initial:
-                            if running_avg == 0 and len(initial_guess) > 1:
-                                running_avg = np.percentile(initial_guess, 90)
-                            else:
-                                running_avg += (height - running_avg) / cnt
+                if not empty:
+                    # print("Full body visible")
+                    if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold or keypoints_2d_conf[12] > conf_threshold:
+                        ind_ok = np.argmax([keypoints_2d_conf[11], keypoints_2d_conf[12]])
+                        self.dt.foot_ind = ind_ok
+                        # print("Foot index", self.dt.foot_ind)
+                        height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.85)
+                        
+                        if dist:
+                            #takes.append(True)
+                            cnt += 1
+                            face.update(dist, flmk_x, flmk_y)
+                            if cnt > self.cnt_initial:
+                                if running_avg == 0 and len(initial_guess) > 1:
+                                    running_avg = np.percentile(initial_guess, 90)
+                                else:
+                                    running_avg += (height - running_avg) / cnt
 
-                                if np.abs(height - running_avg) <= 0.05 * running_avg:
-                                    running_avg = self.alpha * height + (1 - self.alpha) * running_avg
+                                    if np.abs(height - running_avg) <= 0.05 * running_avg:
+                                        running_avg = self.alpha * height + (1 - self.alpha) * running_avg
+                                    
+                                    # Update 3D Scale
+                                    l_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,3])
+                                    r_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,6])
+                                    head_to_foot3d = take_avg_or_larger(l_head_to_foot, r_head_to_foot)
+                                    scale3d = running_avg / head_to_foot3d
+                                    # print("Body size", running_avg*100)
+                            elif cnt < self.cnt_initial: 
+                                # print(f"Taking {height*100:.2f}")
+                                initial_guess.append(height)
+                                # face.add_guess(dist)
                                 
-                                # Update 3D Scale
-                                l_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,3])
-                                r_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,6])
-                                head_to_foot3d = take_avg_or_larger(l_head_to_foot, r_head_to_foot)
-                                scale3d = running_avg / head_to_foot3d
-                                # print("Body size", running_avg*100)
-                        elif cnt < self.cnt_initial: 
-                            # print(f"Taking {height*100:.2f}")
-                            initial_guess.append(height)
-                            # face.add_guess(dist)
+                                # Estimating the passenger class
+                                # label_array['passenger'][0] = -1
+                                passenger_class = -1
+                                
+                            elif cnt == self.cnt_initial: 
+                                running_avg = np.percentile(initial_guess, 90)
+                                # print("Initial guess", running_avg*100)
+                                # face.fix_face_size()
+                                
+                            # Foot이 가장 부정확하기 때문에 이 방법은 좀...
+                            z_dist_foot = dist
                             
-                            # Estimating the passenger class
-                            # label_array['passenger'][0] = -1
-                            passenger_class = -1
+                        else:
+                            # print("Unreliable Height measurement222")
+                            pass
                             
-                        elif cnt == self.cnt_initial: 
-                            running_avg = np.percentile(initial_guess, 90)
-                            # print("Initial guess", running_avg*100)
-                            # face.fix_face_size()
-                            
-                        # Foot이 가장 부정확하기 때문에 이 방법은 좀...
-                        z_dist_foot = dist
-                        
-                    else:
-                        # print("Unreliable Height measurement222")
-                        pass
-                        
-                    # scale
-                    # print("key3d", key3d[2,:])
-                    key3d[2,:] *= scale3d
-                    # print("key3d after scale", key3d[2,:])
-                    # translation``
-                    key3d[2,:] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
-                    # print("key3d after translation", key3d[2,:])
+                        # scale
+                        # print("key3d", key3d[2,:])
+                        key3d[2,:] *= scale3d
+                        # print("key3d after scale", key3d[2,:])
+                        # translation``
+                        key3d[2,:] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
+                        # print("key3d after translation", key3d[2,:])
 
                     # update only when the person is detected
                     # dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
                 else:
-                    pass
+                    no_person += 1
                     # dist_neck = 0
                 # print(f"Height  {running_avg*100}")
-                # if cnt % 10 == 1 and running_avg > 0:
+                # if cnt % 10 == 1 and runn ing_avg > 0:
                 
-                no_person = 0
-
             # when detected person is gone
             else:# running_avg > 0:
                 no_person += 1
-                if no_person > 10:
-                    # print("No person detected!")
-                    passenger_class = 0
-                    label_array['height'][0] = 0
-                    cnt = 0
-                    running_avg = 0
-                    no_person = 0
-                    initial_guess = []
-                    label_array['distance'] = -1
-                    label_array['eye_openness'][0] = 0
-                    label_array['drowsiness'][0] = 6
+            if no_person > 10:
+                # print("No person detected!")
+                passenger_class = 0
+                label_array['height'][0] = 0
+                cnt = 0
+                running_avg = 0
+                no_person = 0
+                initial_guess = []
+                label_array['distance'] = -1
+                label_array['eye_openness'][0] = 0
+                label_array['drowsiness'][0] = 6
+                eye.reset()
                     # empty = True
             # print("No person", no_person)
             #if running_avg > 0:
@@ -172,7 +172,7 @@ class PostProcessor:
             # print("RUNNING AVG", running_avg)
                 label_array['height'][0] = min(running_avg*100*self.height_factor, 999)
                 label_array['distance'][0] = min(face.dist_face*100, 9999)
-                label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
+                label_array['eye_openness'][0] = min(int(eye.EAR/0.5*100), 100)
                 label_array['drowsiness'][0] = eye.drowsy_val
             else:
                 # print("SETTING HEIGHT - INVALID")
