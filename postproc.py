@@ -21,7 +21,7 @@ class PostProcessor:
 
         # upper body running mean
         self.alpha = 0.01
-        self.cnt_initial = 20
+        self.cnt_initial = 15
                 
         self.foot_ind3d = [3,6]
         self.area_lmin = 10
@@ -29,7 +29,7 @@ class PostProcessor:
 
     def is_face_in_roi(self, box):
         return box is not None and box[0] > self.area_lmin and box[3] < self.area_rmax
-        
+                
     def run(self, label_array):
         initial_guess = []
         running_avg = 0
@@ -39,13 +39,13 @@ class PostProcessor:
         cnt = 0
         scale3d = 1.0
         no_person = 0
-        conf_threshold = 60
+        conf_threshold = 50
         
         eye = Eye()
         face = Face()
         label_array['passenger'][0] = 0
         height_class_before = label_array['passenger'][0]
-
+        
         while True:
             # Update incoming values with new ones sent to the generator
             label_array = yield 
@@ -64,7 +64,6 @@ class PostProcessor:
             
             # Face detected in the AOI
             if self.is_face_in_roi(box):
-            #if box is not None and box[0] > self.area_lmin and box[3] < self.area_rmax:
                 empty = False
                 # If Face width not measurable
                 if any(flmk_x == -1):
@@ -80,14 +79,15 @@ class PostProcessor:
                     face.update_face_dist(flmk_x, flmk_y)
                 
                 # print("Full body visible")
-                if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold and keypoints_2d_conf[12] > conf_threshold:
-                    height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.9)
+                if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold or keypoints_2d_conf[12] > conf_threshold:
+                    height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.85)
+                    
                     if dist:
                         #takes.append(True)
                         cnt += 1
                         if cnt > self.cnt_initial:
                             if running_avg == 0 and len(initial_guess) > 1:
-                                running_avg = np.percentile(initial_guess, 85)
+                                running_avg = np.percentile(initial_guess, 90)
                             else:
                                 running_avg += (height - running_avg) / cnt
 
@@ -101,6 +101,7 @@ class PostProcessor:
                                 scale3d = running_avg / head_to_foot3d
                                 # print("Body size", running_avg*100)
                         elif cnt < self.cnt_initial: 
+                            print(f"Taking {height*100:.2f}")
                             initial_guess.append(height)
                             face.add_guess(dist)
                             

@@ -108,7 +108,7 @@ class Face():
         self.P = np.array([[379.9881, 0., 326.52974, 0.],
                            [0., 380.81802, 244.71673, 0.],
                            [0., 0., 1., 0.]])
-        
+        self.alpha = 0.1
         self.fov_v = fov_v
         self.img_height = image_height
         self.img_width = image_width
@@ -153,7 +153,9 @@ class Face():
         dist_fh = self.face_hr / self._face_height
         dist_fw = self.face_wr / self._face_width
         # Magic ratio == ad-hoc
-        self.dist_face = eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw 
+        _dist_now = max(min(eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw, 3.0), 0.1)
+        self.dist_face = self.alpha * _dist_now + (1 - self.alpha) * self.dist_face
+         #= eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw 
             
     def add_guess(self, dist):
         face_wr = self._face_width * dist # pixel / meter (distorted)
