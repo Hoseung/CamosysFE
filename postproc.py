@@ -36,10 +36,11 @@ class PostProcessor:
         initial_guess = []
         running_avg = 0
         # smoothed_keypoints_2d = None
-        z_dist_foot = 1
+        z_dist_foot = 120
+        dist = None
         i = 0
         cnt = 0
-        scale3d = 1.0
+        scale3d = 100.0
         no_person = 0
         conf_threshold = 50
         
@@ -50,7 +51,7 @@ class PostProcessor:
         while True:
             # Update incoming values with new ones sent to the generator
             label_array = yield 
-            box = label_array['face_bounding_box'][0]
+            # box = label_array['face_bounding_box'][0]
             keypoints_2d = label_array['body_keypoints2d'][0].astype(np.float32)
             keypoints_2d_conf = label_array['body_keypoints2d_conf'][0]
             key3d = label_array['body_keypoints3d'][0].astype(np.float32)
@@ -96,45 +97,31 @@ class PostProcessor:
                                     l_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,3])
                                     r_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,6])
                                     head_to_foot3d = take_avg_or_larger(l_head_to_foot, r_head_to_foot)
-                                    scale3d = running_avg / head_to_foot3d
+                                    scale3d = running_avg / head_to_foot3d * 100
                                     # print("Body size", running_avg*100)
                             elif cnt < self.cnt_initial: 
                                 # print(f"Taking {height*100:.2f}")
                                 initial_guess.append(height)
-                                # face.add_guess(dist)
                                 
                                 # Estimating the passenger class
-                                # label_array['passenger'][0] = -1
                                 passenger_class = -1
                                 
                             elif cnt == self.cnt_initial: 
                                 running_avg = np.percentile(initial_guess, 90)
                                 # print("Initial guess", running_avg*100)
-                                # face.fix_face_size()
-                                
-                            # Foot이 가장 부정확하기 때문에 이 방법은 좀...
-                            z_dist_foot = dist
-                            
                         else:
                             # print("Unreliable Height measurement222")
                             pass
                             
-                        # scale
-                        # print("key3d", key3d[2,:])
-                        key3d[2,:] *= scale3d
-                        # print("key3d after scale", key3d[2,:])
-                        # translation``
-                        key3d[2,:] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
-                        # print("key3d after translation", key3d[2,:])
-
                     # update only when the person is detected
                     # dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
+                    if dist is not None:    
+                        z_dist_foot = 0.3 * (dist * 100) + 0.7 * z_dist_foot
+                        label_array['body_keypoints3d'][0][2,:] = (z_dist_foot - (label_array['body_keypoints3d'][0][2,:] * scale3d)).astype(np.int16)
+                        label_array['body_keypoints3d'][0][1,:] -= min(label_array['body_keypoints3d'][0][1,:])
                 else:
                     no_person += 1
-                    # dist_neck = 0
-                # print(f"Height  {running_avg*100}")
-                # if cnt % 10 == 1 and runn ing_avg > 0:
-                
+
             # when detected person is gone
             else:# running_avg > 0:
                 no_person += 1
@@ -151,9 +138,6 @@ class PostProcessor:
                 label_array['drowsiness'][0] = 6
                 eye.reset()
                     # empty = True
-            # print("No person", no_person)
-            #if running_avg > 0:
-            # passenger_old = passenger_new
             if not empty:
                 # print("SETTING HEIGHT - VALID")
                 if running_avg*self.height_factor > 0.40 and running_avg*self.height_factor < 1.20:
