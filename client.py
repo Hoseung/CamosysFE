@@ -44,7 +44,7 @@ class Client:
             ("face_landmarks_x", np.int16, (68)),  # 68 elements of uint16
             ("face_landmarks_y", np.int16, (68)),  # 68 elements of uint16
             ("body_keypoints3d", np.int16, (3, 15)),  # 15 elements of uint16 in 3D
-            ("body_keypoints2d", np.uint16, (2, 13)),  # 13 elements of uint16 in 2D
+            ("body_keypoints2d", np.int16, (2, 13)),  # 13 elements of uint16 in 2D
             ("body_keypoints2d_conf", np.uint8, (13,)),  # 13 elements of uint16 in 1D
             ("face_bounding_box", np.uint16, (4,))# 4 elements of uint16
             ])
@@ -71,7 +71,7 @@ class Client:
         if self.sock:
             self.sock.close()
 
-    def receive_frame(self):
+    def receive_frame_(self):
         flist = glob("../CamosysFE_data/test_9cm/frame*.jpg")
         flist.sort()
         labels = pickle.load(open("../CamosysFE_data/test_9cm/label_data.pkl", "rb"))
@@ -114,8 +114,8 @@ class Client:
         cnt = 0
         bad = 0
         while self.running:
-            try:
-            # if True:
+            # try:
+            if True:
                 frame, frame_org = next(self.image_generator)
                 
                 cv2.imwrite(f"../CamosysFE_data/frame{cnt:04d}.jpg", frame)
@@ -155,8 +155,8 @@ class Client:
                 # print(f"Count -- {cnt}")
                 if cnt % 100 == 0:
                     pickle.dump(save, open("../CamosysFE_data/label_data.pkl", "wb"))
-                    
-            except Exception as e:
+            else:        
+            # except Exception as e:
                 pickle.dump(save, open("../CamosysFE_data/label_data.pkl", "wb"))
                 print(f"Error receiving data: {e}")
                 print("_____________________")

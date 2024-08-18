@@ -312,7 +312,6 @@ class MainWindow(QWidget):
             #     self.box_old = bbox
             #     # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
             #     # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
-                
             if all(label_data["body_keypoints2d"][0][0] != -1):
                 # body_keypoints
                 bk2d_x = np.round((label_data["body_keypoints2d"][0][0] + self.fhd_shift_x) * frame_width_resize_ratio).astype(int)
