@@ -72,12 +72,12 @@ class Client:
             self.sock.close()
 
     def receive_frame(self):
-        flist = glob("../CamosysFE_data/test16/frame*.jpg")
+        flist = glob("../CamosysFE_data/test17/frame*.jpg")
         flist.sort()
-        labels = pickle.load(open("../CamosysFE_data/test16/label_data.pkl", "rb"))
+        labels = pickle.load(open("../CamosysFE_data/test17/label_data.pkl", "rb"))
 
         for i, label_array in enumerate(labels):
-            time.sleep(0.02)
+            time.sleep(0.03)
             frame = cv2.imread(flist[i])
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             
@@ -105,9 +105,8 @@ class Client:
 
             if not self.label_data_queue.full():
                 self.label_data_queue.put(label_array)
-        
-            self.frame_queue.put(frame)
-            self.label_data_queue.put(label_array)
+            # self.frame_queue.put(frame)
+            # self.label_data_queue.put(label_array)
 
     def receive_frame_(self):
         save = []

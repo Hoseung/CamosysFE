@@ -46,7 +46,6 @@ class PostProcessor:
         eye = Eye()
         face = Face()
         label_array['passenger'][0] = 0
-        passenger_old = -1
         
         while True:
             # Update incoming values with new ones sent to the generator
@@ -62,19 +61,9 @@ class PostProcessor:
             i += 1
             # cnt += 1
             # FACE            
-            empty = True
-            
+            empty = any(flmk_x == -1)
             # Face detected in the AOI
-            if self.is_face_in_roi(box):
-                empty = False
-                # If Face width not measurable
-                if any(flmk_x == -1):
-                    # print("Invalid face landmarks")
-                    # print(flmk_x)
-                    # print(flmk_y)
-                    empty = True
-                    continue
-                
+            if not empty:
                 eye.update_EAR((flmk_x, flmk_y))
                 face.update_face_wh(flmk_x, flmk_y)
                 if face.face_hr is not None:
@@ -106,7 +95,7 @@ class PostProcessor:
                                 scale3d = running_avg / head_to_foot3d
                                 # print("Body size", running_avg*100)
                         elif cnt < self.cnt_initial: 
-                            print(f"Taking {height*100:.2f}")
+                            # print(f"Taking {height*100:.2f}")
                             initial_guess.append(height)
                             face.add_guess(dist)
                             
@@ -116,7 +105,7 @@ class PostProcessor:
                             
                         elif cnt == self.cnt_initial: 
                             running_avg = np.percentile(initial_guess, 90)
-                            print("Initial guess", running_avg*100)
+                            # print("Initial guess", running_avg*100)
                             face.fix_face_size()
                             
                         # Foot이 가장 부정확하기 때문에 이 방법은 좀...
@@ -151,13 +140,12 @@ class PostProcessor:
                     label_array['height'][0] = 0
                     cnt = 0
                     running_avg = 0
-                    print("RESETTING HEIGHT because NO_PERSON")
                     no_person = 0
                     initial_guess = []
                     label_array['distance'] = -1
+                    label_array['eye_openness'][0] = 0
+                    label_array['drowsiness'][0] = 6
                     empty = True
-            else:
-                empty = True # or pass?
                     
             #if running_avg > 0:
             # passenger_old = passenger_new
@@ -181,14 +169,13 @@ class PostProcessor:
                 label_array['distance'][0] = min(face.dist_face*100, 9999)
                 label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
                 label_array['drowsiness'][0] = eye.drowsy_val
-            
             else:
                 # print("SETTING HEIGHT - INVALID")
                 passenger_class = 0
                 label_array['height'][0] = 0
                 label_array['distance'][0] = -1
                 label_array['eye_openness'][0] = 0
-                label_array['drowsiness'][0] = -1
+                label_array['drowsiness'][0] = 6
             
             label_array['passenger'][0] = self.class_tracker.update_state(passenger_class)
             

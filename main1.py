@@ -145,8 +145,8 @@ class MainWindow(QWidget):
         self.lbl_img_2_1_2 = QLabel()
         self.lbl_img_2_1_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_2_1_2.setAlignment(Qt.AlignCenter)
-        img2_1_2_1 = QPixmap('icon/Property 1=0, Selected=Off.png')
-        img2_1_2_2 = QPixmap('icon/Property 1=0, Selected=On.png')
+        img2_1_2_1 = QPixmap('icon/Drowsiness-1ON.png')
+        # img2_1_2_2 = QPixmap('icon/Property 1=0, Selected=On.png')
         self.lbl_img_2_1_2.setPixmap(img2_1_2_1)
         vbox2_1_2.addWidget(self.lbl_img_2_1_2, stretch=3)
         lbl_txt_2_1_2 = QLabel("Drowsiness")
@@ -155,7 +155,6 @@ class MainWindow(QWidget):
         lbl_txt_2_1_2.setStyleSheet(
             style_255_20
         )
-        flg2_1_2 = [1]
         vbox2_1_2.addWidget(lbl_txt_2_1_2, stretch=1)
         vbox2_1.addLayout(vbox2_1_2, stretch=3)
 
@@ -163,8 +162,6 @@ class MainWindow(QWidget):
         self.img_lbl.setAlignment(Qt.AlignCenter)
 
         vbox2_2 = QVBoxLayout()
-        # btn2_2 = QPushButton("이미지 및 메타데이터 실시간 출력")
-        # btn2_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         vbox2_2.addWidget(self.img_lbl, stretch=2)
 
         hbox2.addLayout(vbox2_1, stretch=2)
@@ -178,7 +175,6 @@ class MainWindow(QWidget):
         self.lbl_img_3_1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_1.setAlignment(Qt.AlignCenter)
         img3_1_1 = QPixmap('icon/PhoneUseOff.png')
-        img3_1_2 = QPixmap('icon/PhoneUseOn.png')
         self.lbl_img_3_1.setPixmap(img3_1_1)
         vbox3_1.addWidget(self.lbl_img_3_1, stretch=3)
         self.lbl_txt_3_1 = QLabel("Phone use (90%)")
@@ -187,7 +183,6 @@ class MainWindow(QWidget):
         self.lbl_txt_3_1.setStyleSheet(
             style_255_20
         )
-        flg3_1 = [1]
         vbox3_1.addWidget(self.lbl_txt_3_1, stretch=1)
         hbox3.addLayout(vbox3_1, stretch=10)
 
@@ -196,7 +191,6 @@ class MainWindow(QWidget):
         self.lbl_img_3_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_2.setAlignment(Qt.AlignCenter)
         img3_2_1 = QPixmap('icon/PassengerEmptyOff.png')
-        img3_2_2 = QPixmap('icon/PassengerEmptyOn.png')
         self.lbl_img_3_2.setPixmap(img3_2_1)
         vbox3_2.addWidget(self.lbl_img_3_2, stretch=3)
         self.lbl_txt_3_2 = QLabel("Empty")
@@ -205,7 +199,6 @@ class MainWindow(QWidget):
         self.lbl_txt_3_2.setStyleSheet(
             style_105_20
         )
-        flg3_2 = [1]
         vbox3_2.addWidget(self.lbl_txt_3_2, stretch=1)
         hbox3.addLayout(vbox3_2, stretch=9)
 
@@ -214,7 +207,6 @@ class MainWindow(QWidget):
         self.lbl_img_3_3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_3.setAlignment(Qt.AlignCenter)
         img3_3_1 = QPixmap('icon/PassengerKidsOff.png')
-        img3_3_2 = QPixmap('icon/PassengerKidsOn.png')
         self.lbl_img_3_3.setPixmap(img3_3_1)
         vbox3_3.addWidget(self.lbl_img_3_3, stretch=3)
         self.lbl_txt_3_3 = QLabel("Age 1~6")
@@ -223,7 +215,6 @@ class MainWindow(QWidget):
         self.lbl_txt_3_3.setStyleSheet(
             style_105_20
         )
-        flg3_3 = [1]
         vbox3_3.addWidget(self.lbl_txt_3_3, stretch=1)
         hbox3.addLayout(vbox3_3, stretch=9)
 
@@ -232,7 +223,6 @@ class MainWindow(QWidget):
         self.lbl_img_3_4.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_4.setAlignment(Qt.AlignCenter)
         img3_4_1 = QPixmap('icon/PassengerAF05Off.png')
-        img3_4_2 = QPixmap('icon/PassengerAF05On.png')
         self.lbl_img_3_4.setPixmap(img3_4_1)
         vbox3_4.addWidget(self.lbl_img_3_4, stretch=3)
         self.lbl_txt_3_4 = QLabel("AF05")
@@ -241,7 +231,6 @@ class MainWindow(QWidget):
         self.lbl_txt_3_4.setStyleSheet(
             style_105_20
         )
-        flg3_4 = [1]
         vbox3_4.addWidget(self.lbl_txt_3_4, stretch=1)
         hbox3.addLayout(vbox3_4, stretch=9)
 
@@ -250,7 +239,6 @@ class MainWindow(QWidget):
         self.lbl_img_3_5.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_5.setAlignment(Qt.AlignCenter)
         img3_5_1 = QPixmap('icon/PassengerAM50Off.png')
-        img3_5_2 = QPixmap('icon/PassengerAM50On.png')
         self.lbl_img_3_5.setPixmap(img3_5_1)
         vbox3_5.addWidget(self.lbl_img_3_5, stretch=3)
         self.lbl_txt_3_5 = QLabel("AM50")
@@ -259,7 +247,6 @@ class MainWindow(QWidget):
         self.lbl_txt_3_5.setStyleSheet(
             style_105_20
         )
-        flg3_5 = [1]
         vbox3_5.addWidget(self.lbl_txt_3_5, stretch=1)
         hbox3.addLayout(vbox3_5, stretch=9)
 
@@ -268,7 +255,6 @@ class MainWindow(QWidget):
         self.lbl_img_3_6.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_6.setAlignment(Qt.AlignCenter)
         img3_6_1 = QPixmap('icon/PassengerAM95Off.png')
-        img3_6_2 = QPixmap('icon/PassengerAM95On.png')
         self.lbl_img_3_6.setPixmap(img3_6_1)
         vbox3_6.addWidget(self.lbl_img_3_6, stretch=3)
         self.lbl_txt_3_6 = QLabel("AM95")
@@ -277,7 +263,6 @@ class MainWindow(QWidget):
         self.lbl_txt_3_6.setStyleSheet(
             style_105_20
         )
-        flg3_6 = [1]
         vbox3_6.addWidget(self.lbl_txt_3_6, stretch=1)
         hbox3.addLayout(vbox3_6, stretch=9)
 
@@ -296,8 +281,6 @@ class MainWindow(QWidget):
 
     def update_view(self):
         if not self.client.frame_queue.empty() and not self.client.label_data_queue.empty():
-            
-
             frame = self.client.frame_queue.get()
             if self.frame_width_resize != frame.shape[1] or self.frame_height_resize != frame.shape[0]:
                 frame_width_resize_ratio = self.frame_width_resize / frame.shape[1]
@@ -369,7 +352,7 @@ class MainWindow(QWidget):
 
                 # face_landmarks
             if label_data["face_landmarks_x"][0][0] == -1:
-                pass
+                self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
             else:
                 face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + self.fhd_shift_x) * frame_width_resize_ratio).astype(int)
                 face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + self.fhd_shift_y) * frame_height_resize_ratio).astype(int)
