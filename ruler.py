@@ -145,12 +145,11 @@ class DistanceTriangle():
         new_u_l_ratio = (height_pixel - lower) / lower
         #new_u_l_ratio = self.upper_lower_ratio(undistorted)
         if abs(new_u_l_ratio - self.u_l_ratio) / self.u_l_ratio > 0.2:
-            print("[ignore] U-L ratio changed", new_u_l_ratio, self.u_l_ratio)
+            # print("[ignore] U-L ratio changed", new_u_l_ratio, self.u_l_ratio)
             # Probably not in straight pose
             return False, False
         else: 
-            
-            # self.update_uppoer_lower_ratio(new_u_l_ratio)
+            self.update_upper_lower_ratio(new_u_l_ratio)
             if take_frac * height_pixel > bone_sum_pixel:
                 # print("[take] U-L ratio", new_u_l_ratio, self.u_l_ratio)
                 # print("[height_taken] Measured height", height_pixel, "bone_sum", bone_sum_pixel)
@@ -159,7 +158,7 @@ class DistanceTriangle():
             else:
                 return False, False
         
-    def update_uppoer_lower_ratio(self, new_u_l_ratio):
+    def update_upper_lower_ratio(self, new_u_l_ratio):
         self.u_l_ratio = self.u_l_alpha * new_u_l_ratio + (1 - self.u_l_alpha) * self.u_l_ratio
             
     def upper_lower_ratio(self, keypoints_2d):
