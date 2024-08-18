@@ -1,5 +1,5 @@
 import math
-import yaml
+# import yaml
 import cv2
 import numpy as np
 # from mpl_toolkits.mplot3d import Axes3D
@@ -192,46 +192,46 @@ def image_to_world_coordinates(u, v, Z, K_inv):
     XYZ = Z * np.dot(K_inv, uv1)
     return XYZ
 
-class RealScaler():
-    def __init__(self, cam_yml):
-        with open(cam_yml, 'r') as f:
-            yy = yaml.safe_load(f)
+# class RealScaler():
+#     def __init__(self, cam_yml):
+#         with open(cam_yml, 'r') as f:
+#             yy = yaml.safe_load(f)
     
-        self.cam_mtx = np.array(yy['camera_matrix']['data']).reshape(3,3)
-        self.distor_coeff = np.array(yy['distortion_coefficients']['data'])
-        self.focal_length = np.sqrt(self.cam_mtx[0,0]**2 + self.cam_mtx[1,1]**2)
-        self.K_inv = np.linalg.inv(self.cam_mtx)
+#         self.cam_mtx = np.array(yy['camera_matrix']['data']).reshape(3,3)
+#         self.distor_coeff = np.array(yy['distortion_coefficients']['data'])
+#         self.focal_length = np.sqrt(self.cam_mtx[0,0]**2 + self.cam_mtx[1,1]**2)
+#         self.K_inv = np.linalg.inv(self.cam_mtx)
 
-    def undistort_points(self, points):
-        """
-        왜곡된 좌표를 보정하는 함수
-        :param points: 왜곡된 좌표
-        :param camera_matrix: 카메라 매트릭스
-        :param dist_coeffs: 왜곡 계수
-        :return: 보정된 좌표
-        """
-        points = np.array(points, dtype=np.float32)
-        points = points.reshape(-1, 1, 2)
-        undistorted_points = cv2.undistortPoints(points, self.cam_mtx, self.distor_coeff, None, self.cam_mtx)
-        return undistorted_points.reshape(-1, 2)
+#     def undistort_points(self, points):
+#         """
+#         왜곡된 좌표를 보정하는 함수
+#         :param points: 왜곡된 좌표
+#         :param camera_matrix: 카메라 매트릭스
+#         :param dist_coeffs: 왜곡 계수
+#         :return: 보정된 좌표
+#         """
+#         points = np.array(points, dtype=np.float32)
+#         points = points.reshape(-1, 1, 2)
+#         undistorted_points = cv2.undistortPoints(points, self.cam_mtx, self.distor_coeff, None, self.cam_mtx)
+#         return undistorted_points.reshape(-1, 2)
 
-    def get_3d_length(self, p1, p2):
-        """
-        p1 = [u,v,z] 
-        for example, [280, 156, 1.02]
-        """
-        xyz1 = image_to_world_coordinates(*p1, self.K_inv)
-        xyz2 = image_to_world_coordinates(*p2, self.K_inv)
-        return np.linalg.norm(xyz2-xyz1)
+#     def get_3d_length(self, p1, p2):
+#         """
+#         p1 = [u,v,z] 
+#         for example, [280, 156, 1.02]
+#         """
+#         xyz1 = image_to_world_coordinates(*p1, self.K_inv)
+#         xyz2 = image_to_world_coordinates(*p2, self.K_inv)
+#         return np.linalg.norm(xyz2-xyz1)
     
-    def get_real_length(self, p1, p2, projection_angle=21, z_dist = 1.02):
-        undistorted_points = self.undistort_points([p1, p2])
-        undistorted_length = np.linalg.norm(undistorted_points[1]-undistorted_points[0])
-        # print("original length", np.linalg.norm(np.array(p2)-np.array(p1)))
-        # print("undistorted length", undistorted_length)
-        real_length_in_px = undistorted_length/np.cos(np.deg2rad(projection_angle))
-        real_length = real_length_in_px/self.focal_length * z_dist
-        return real_length
+#     def get_real_length(self, p1, p2, projection_angle=21, z_dist = 1.02):
+#         undistorted_points = self.undistort_points([p1, p2])
+#         undistorted_length = np.linalg.norm(undistorted_points[1]-undistorted_points[0])
+#         # print("original length", np.linalg.norm(np.array(p2)-np.array(p1)))
+#         # print("undistorted length", undistorted_length)
+#         real_length_in_px = undistorted_length/np.cos(np.deg2rad(projection_angle))
+#         real_length = real_length_in_px/self.focal_length * z_dist
+#         return real_length
     
 class StateTracker:
     def __init__(self, update_threshold=5):
