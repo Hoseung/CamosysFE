@@ -486,7 +486,7 @@ def main():
                     background-color: rgb(30, 30, 30);
                 }
                 """)
-    host_ip = ['169.254.244.73','169.254.31.226'][0]
+    host_ip = '0.0.0.0'
     client = Client(server_ip = host_ip, 
                     camera_height=args.height, 
                     camera_pitch=args.pitch,

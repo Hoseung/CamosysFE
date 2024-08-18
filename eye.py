@@ -15,7 +15,7 @@ def eye_aspect_ratio(eye):
     A = euclidean_dist(eye[1], eye[5])
     B = euclidean_dist(eye[2], eye[4])
     C = euclidean_dist(eye[0], eye[3])
-    if C < A or C < B or np.isfinite(A)*np.isfinite(B)*np.isfinite(C) == False:
+    if A*B*C==0 or C < A or C < B or np.isfinite(A)*np.isfinite(B)*np.isfinite(C) == False:
         return 0.5, 0.5, 0.5
     
     ear = (alpha * A + beta * B) / (2.0 * C)
@@ -132,7 +132,9 @@ class Face():
         # print(f"Ratio {eye_dist_ratio:.2f}")
         # It's ratio, scale-invariant. No need to worry about undistort
         # To some degrees, at least.
-        eye_dist_ratio = self.eye_ratio(flmk_x, flmk_y)        
+        eye_dist_ratio = self.eye_ratio(flmk_x, flmk_y)
+        if not eye_dist_ratio:
+            return
         # D1 * h1 = D2 * h2  ->  D2 = D1 * h1 / h2
         dist_fh = self.face_hr / self._face_height
         dist_fw = self.face_wr / self._face_width
@@ -155,9 +157,11 @@ class Face():
         
     @staticmethod
     def eye_ratio(flmk_x, flmk_y):
+        std_both = std2d(flmk_x[36:48], flmk_y[36:48])
         std_single = max([std2d(flmk_x[36:42], flmk_y[36:42]), 
                         std2d(flmk_x[42:48], flmk_y[42:48])])
+        if std_both == 0 or std_single == 0:
+            return False
         
-        std_both = std2d(flmk_x[36:48], flmk_y[36:48])
         return std_single/std_both * 2 # ~ 0.5
     

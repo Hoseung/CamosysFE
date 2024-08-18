@@ -61,7 +61,7 @@ class PostProcessor:
             i += 1
             # cnt += 1
             # FACE            
-            empty = any(flmk_x == -1)
+            empty = any(flmk_x == -1) or any(flmk_y == -1)
             # Face detected in the AOI
             if not empty:
                 eye.update_EAR((flmk_x, flmk_y))
