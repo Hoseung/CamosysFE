@@ -82,8 +82,10 @@ class Face():
         self._initial_guess_face_h = np.zeros(n_initial)
         self._initial_guess_face_w = np.zeros(n_initial)
         self._initial_count = 0
+        self._guess_max = 15
         self.face_hr = None
         self.face_wr = None
+        self.face_cnt = 0
         self.dist_face = 0
         self.camera_matrix = np.array([[380.5828, 0., 327.04076],
                                        [0., 381.61306, 245.22762],
@@ -92,7 +94,8 @@ class Face():
         self.P = np.array([[379.9881, 0., 326.52974, 0.],
                            [0., 380.81802, 244.71673, 0.],
                            [0., 0., 1., 0.]])
-        self.alpha = 0.1
+        self._reliable = False
+        self.alpha = 0.05
         self.fov_v = fov_v
         self.img_height = image_height
         self.img_width = image_width
@@ -125,32 +128,57 @@ class Face():
         #undistorted_ = np.array([self.undistort_normed(p) for p in keypoints_2d.T]).T
         flmk_x, flmk_y = self.undistort_normed(flmk_x, flmk_y)
         self._face_width = np.mean(flmk_x[14:17] - flmk_x[:3])
-        self._face_height = 0.5*(np.linalg.norm(flmk_y[0] - flmk_y[9])+
-                        np.linalg.norm(flmk_y[16] - flmk_y[9]))
+        if self._face_width < 60:
+            self._reliable = False
+        else:
+            self._face_height = 0.5*(np.linalg.norm(flmk_y[0] - flmk_y[9])+
+                            np.linalg.norm(flmk_y[16] - flmk_y[9]))
+            if self._face_height < 60:
+                self._reliable = False
+            else:
+                self._reliable = True
             
     def update_face_dist(self, flmk_x, flmk_y):
+        # if self._reliable == False:
+        #     return
         # print(f"Ratio {eye_dist_ratio:.2f}")
         # It's ratio, scale-invariant. No need to worry about undistort
         # To some degrees, at least.
         eye_dist_ratio = self.eye_ratio(flmk_x, flmk_y)
         if not eye_dist_ratio:
-            return
+            return False
         # D1 * h1 = D2 * h2  ->  D2 = D1 * h1 / h2
         dist_fh = self.face_hr / self._face_height
         dist_fw = self.face_wr / self._face_width
+        
+        # print("dist_fh", dist_fh, "dist_fw", dist_fw)
         # Magic ratio == ad-hoc
         _dist_now = max(min(eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw, 3.0), 0.1)
         self.dist_face = self.alpha * _dist_now + (1 - self.alpha) * self.dist_face
          #= eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw 
             
-    def add_guess(self, dist):
-        face_wr = self._face_width * dist # pixel / meter (distorted)
-        face_hr = self._face_height * dist
-        self._initial_guess_face_h[self._initial_count] = face_hr
-        self._initial_guess_face_w[self._initial_count] = face_wr
-        self._initial_count += 1
-        
+    def update(self, dist, flmk_x, flmk_y):
+        if self._reliable:
+            if self._initial_count < self._guess_max:
+                face_wr = self._face_width * dist # pixel / meter (distorted)
+                face_hr = self._face_height * dist
+                self._initial_guess_face_h[self._initial_count] = face_hr
+                self._initial_guess_face_w[self._initial_count] = face_wr
+                self._initial_count += 1
+                # print("Guess added", face_hr, face_wr)
+            elif self._initial_count == self._guess_max:
+                self.fix_face_size()
+                # print("Face size fixed")
+            else:
+                success = self.update_face_dist(flmk_x, flmk_y)
+                # print("Face dist updated", success)
+                
+            
     def fix_face_size(self):
+        # if self._initial_count < self._guess_max:
+        #     self.face_wr = None
+        #     self.face_hr = None
+        #     return
         self.face_wr = np.percentile(self._initial_guess_face_w, 90)
         self.face_hr = np.percentile(self._initial_guess_face_h, 90)
         self._initial_count = 0

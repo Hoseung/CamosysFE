@@ -62,11 +62,13 @@ class PostProcessor:
             # cnt += 1
             # FACE            
             empty = any(flmk_x == -1) or any(flmk_y == -1)
+            # print("EMPTY", empty)
             # Face detected in the AOI
             if not empty:
                 eye.update_EAR((flmk_x, flmk_y))
                 face.update_face_wh(flmk_x, flmk_y)
-                if face.face_hr is not None:
+                # print("updated face", face.face_hr, face.face_wr)
+                if face.face_hr is not None and face.face_wr is not None:
                     face.update_face_dist(flmk_x, flmk_y)
                 
                 # print("Full body visible")
@@ -79,6 +81,7 @@ class PostProcessor:
                     if dist:
                         #takes.append(True)
                         cnt += 1
+                        face.update(dist, flmk_x, flmk_y)
                         if cnt > self.cnt_initial:
                             if running_avg == 0 and len(initial_guess) > 1:
                                 running_avg = np.percentile(initial_guess, 90)
@@ -97,7 +100,7 @@ class PostProcessor:
                         elif cnt < self.cnt_initial: 
                             # print(f"Taking {height*100:.2f}")
                             initial_guess.append(height)
-                            face.add_guess(dist)
+                            # face.add_guess(dist)
                             
                             # Estimating the passenger class
                             # label_array['passenger'][0] = -1
@@ -106,7 +109,7 @@ class PostProcessor:
                         elif cnt == self.cnt_initial: 
                             running_avg = np.percentile(initial_guess, 90)
                             # print("Initial guess", running_avg*100)
-                            face.fix_face_size()
+                            # face.fix_face_size()
                             
                         # Foot이 가장 부정확하기 때문에 이 방법은 좀...
                         z_dist_foot = dist
@@ -130,9 +133,11 @@ class PostProcessor:
                     # dist_neck = 0
                 # print(f"Height  {running_avg*100}")
                 # if cnt % 10 == 1 and running_avg > 0:
+                
+                no_person = 0
 
             # when detected person is gone
-            elif running_avg > 0:
+            else:# running_avg > 0:
                 no_person += 1
                 if no_person > 10:
                     # print("No person detected!")
@@ -145,8 +150,8 @@ class PostProcessor:
                     label_array['distance'] = -1
                     label_array['eye_openness'][0] = 0
                     label_array['drowsiness'][0] = 6
-                    empty = True
-                    
+                    # empty = True
+            # print("No person", no_person)
             #if running_avg > 0:
             # passenger_old = passenger_new
             if not empty:
