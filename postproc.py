@@ -1,6 +1,7 @@
 import numpy as np
 from ruler import DistanceTriangle, take_avg_or_larger
 from eye import Eye, Face
+from utils import StateTracker
 
 class PostProcessor:
     def __init__(self, image_width=1024, image_height=1024,
@@ -26,6 +27,7 @@ class PostProcessor:
         self.foot_ind3d = [3,6]
         self.area_lmin = 10
         self.area_rmax = image_width -10
+        self.class_tracker = StateTracker()
 
     def is_face_in_roi(self, box):
         return box is not None and box[0] > self.area_lmin and box[3] < self.area_rmax
@@ -44,7 +46,7 @@ class PostProcessor:
         eye = Eye()
         face = Face()
         label_array['passenger'][0] = 0
-        height_class_before = label_array['passenger'][0]
+        passenger_old = -1
         
         while True:
             # Update incoming values with new ones sent to the generator
@@ -109,7 +111,8 @@ class PostProcessor:
                             face.add_guess(dist)
                             
                             # Estimating the passenger class
-                            label_array['passenger'][0] = -1
+                            # label_array['passenger'][0] = -1
+                            passenger_class = -1
                             
                         elif cnt == self.cnt_initial: 
                             running_avg = np.percentile(initial_guess, 90)
@@ -144,7 +147,7 @@ class PostProcessor:
                 no_person += 1
                 if no_person > 10:
                     # print("No person detected!")
-                    label_array['passenger'][0] = 0
+                    passenger_class = 0
                     label_array['height'][0] = 0
                     cnt = 0
                     running_avg = 0
@@ -153,27 +156,24 @@ class PostProcessor:
                     initial_guess = []
                     label_array['distance'] = -1
                     empty = True
-                    face_wr_final = None
-                    face_hr_final = None
             else:
                 empty = True # or pass?
                     
             #if running_avg > 0:
+            # passenger_old = passenger_new
             if not empty:
                 # print("SETTING HEIGHT - VALID")
                 if running_avg*self.height_factor > 0.40 and running_avg*self.height_factor < 1.20:
-                    label_array['passenger'][0] = 1
+                    passenger_class = 1
                 elif running_avg*self.height_factor >= 1.2 and running_avg*self.height_factor < 1.60:
-                    print("SETTING HEIGHT - 2")
-                    print("running_avg*self.height_factor", running_avg*self.height_factor)
-                    label_array['passenger'][0] = 2
+                    passenger_class = 2
                 elif running_avg*self.height_factor >= 1.60 and running_avg*self.height_factor < 1.85:
-                    label_array['passenger'][0] = 3
+                    passenger_class = 3
                 elif running_avg*self.height_factor >= 1.85 and running_avg*self.height_factor < 2.3:
-                    label_array['passenger'][0] = 4
+                    passenger_class = 4
                 else:
                     # Something wrong
-                    label_array['passenger'][0] = -1
+                    passenger_class = -1
             # print("Distance to camera", dist_face)
             
             # print("RUNNING AVG", running_avg)
@@ -184,16 +184,11 @@ class PostProcessor:
             
             else:
                 # print("SETTING HEIGHT - INVALID")
-                label_array['passenger'][0] = 0
+                passenger_class = 0
                 label_array['height'][0] = 0
                 label_array['distance'][0] = -1
                 label_array['eye_openness'][0] = 0
                 label_array['drowsiness'][0] = 0
             
+            label_array['passenger'][0] = self.class_tracker.update_state(passenger_class)
             
-            # DEBUG
-            if height_class_before != label_array['height'][0]:
-                print("HEIGHT CLASS Changed", label_array['passenger'][0])
-                height_class_before = label_array['height'][0]
-            # print("HEIGHT CLASS this time", label_array['passenger'][0])
-            # yield dist_neck

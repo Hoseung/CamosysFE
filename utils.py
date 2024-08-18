@@ -232,3 +232,23 @@ class RealScaler():
         real_length_in_px = undistorted_length/np.cos(np.deg2rad(projection_angle))
         real_length = real_length_in_px/self.focal_length * z_dist
         return real_length
+    
+class StateTracker:
+    def __init__(self, update_threshold=5):
+        self.previous_state = -1
+        self.current_count = 0
+        self.current_measurement = -1
+        self.update_threshold = update_threshold
+
+    def update_state(self, new_measurement):
+        if new_measurement == self.current_measurement:
+            self.current_count += 1
+        else:
+            self.current_measurement = new_measurement
+            self.current_count = 1
+
+        # Change state only if we have more than 5 consistent measurements in a row
+        if self.current_count > self.update_threshold:
+            self.previous_state = self.current_measurement
+
+        return self.previous_state
