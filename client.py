@@ -71,9 +71,9 @@ class Client:
             self.sock.close()
 
     def receive_frame(self):
-        flist = glob("./test12/frame*.jpg")
+        flist = glob("../CamosysFE_data/test13/frame*.jpg")
         flist.sort()
-        labels = pickle.load(open("./test12/label_data.pkl", "rb"))
+        labels = pickle.load(open("../CamosysFE_data/test13/label_data.pkl", "rb"))
 
         for i, label_array in enumerate(labels):
             time.sleep(0.01)
@@ -115,13 +115,9 @@ class Client:
         while self.running:
             try:
             # if True:
-                # Todo
-                # 원본을 self.frame_queue.put(frame)에 넣고
-                # 자른건 소켓으로 보내기
-                # 그릴 때 비율 잘 맞춰서 그리기. 
                 frame, frame_org = next(self.image_generator)
                 
-                cv2.imwrite(f"frame{cnt:04d}.jpg", frame)
+                cv2.imwrite(f"../CamosysFE_data/frame{cnt:04d}.jpg", frame)
                 # print("Fame sent size", frame.shape)
                 self.conn.sendall(frame.tobytes())
             
@@ -157,10 +153,10 @@ class Client:
                 
                 print(f"Count -- {cnt}")
                 if cnt % 100 == 0:
-                    pickle.dump(save, open("label_data.pkl", "wb"))
+                    pickle.dump(save, open("../CamosysFE_data/label_data.pkl", "wb"))
                     
             except Exception as e:
-                pickle.dump(save, open("label_data.pkl", "wb"))
+                pickle.dump(save, open("../CamosysFE_data/label_data.pkl", "wb"))
                 print(f"Error receiving data: {e}")
                 print("_____________________")
                 print("Pickle saved")
