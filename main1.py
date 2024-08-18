@@ -36,8 +36,17 @@ class MainWindow(QWidget):
         super(QWidget, self).__init__(*args, **kwargs)
         self.client = client
         self.use = use
-        self.box_alpha = 0.3
+        self.draw_alpha = 0.3
         self.box_old = None
+        
+        self.frame_width_resize = 1333 # 1333 -> 16:9
+        self.frame_height_resize = 750
+        self.fhd_shift_x = 448
+        self.fhd_shift_y = 56
+        self.draw_conf_thr = 50
+        
+        self.bk2d_x_old = None
+        self.bk2d_y_old = None
         # self.post = Postprocess()
 
         self.setWindowTitle("Ti DEMO")
@@ -335,18 +344,13 @@ class MainWindow(QWidget):
 
     def update_view(self):
         if not self.client.frame_queue.empty() and not self.client.label_data_queue.empty():
-            frame_width_resize = 1333 # 1333 -> 16:9
-            frame_height_resize = 750
             
-            fhd_shift_x = 448
-            fhd_shift_y = 56
-            draw_conf_thr = 50
 
             frame = self.client.frame_queue.get()
-            if frame_width_resize != frame.shape[1] or frame_height_resize != frame.shape[0]:
-                frame_width_resize_ratio = frame_width_resize / frame.shape[1]
-                frame_height_resize_ratio = frame_height_resize / frame.shape[0]
-                frame = cv2.resize(frame, (frame_width_resize, frame_height_resize))
+            if self.frame_width_resize != frame.shape[1] or self.frame_height_resize != frame.shape[0]:
+                frame_width_resize_ratio = self.frame_width_resize / frame.shape[1]
+                frame_height_resize_ratio = self.frame_height_resize / frame.shape[0]
+                frame = cv2.resize(frame, (self.frame_width_resize, self.frame_height_resize))
             
             label_data = self.client.label_data_queue.get()
 
@@ -359,10 +363,10 @@ class MainWindow(QWidget):
             area_rmax = 1024
             
             # ROI
-            cv2.rectangle(frame, (int((fhd_shift_x+area_lmin)*frame_width_resize_ratio),
-                                  int(fhd_shift_y*frame_height_resize_ratio)),
-                          (int((1920 - fhd_shift_x - area_lmin)*frame_width_resize_ratio),
-                                  int(frame_height_resize)), 
+            cv2.rectangle(frame, (int((self.fhd_shift_x+area_lmin)*frame_width_resize_ratio),
+                                  int(self.fhd_shift_y*frame_height_resize_ratio)),
+                          (int((1920 - self.fhd_shift_x - area_lmin)*frame_width_resize_ratio),
+                                  int(self.frame_height_resize)), 
                           (105, 105, 105), 3)
             
             # Face bounding box
@@ -370,14 +374,25 @@ class MainWindow(QWidget):
             if bbox is not None and bbox[0] > area_lmin and bbox[3] < area_rmax:
                 if self.box_old is None:
                     self.box_old = bbox
-                bbox = self.box_alpha * bbox + (1 - self.box_alpha) * self.box_old
+                bbox = self.draw_alpha * bbox + (1 - self.draw_alpha) * self.box_old
                 self.box_old = bbox
                 # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
                 # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
                 
                 # body_keypoints
-                bk2d_x = np.round((label_data["body_keypoints2d"][0][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
-                bk2d_y = np.round((label_data["body_keypoints2d"][0][1] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
+                bk2d_x = np.round((label_data["body_keypoints2d"][0][0] + self.fhd_shift_x) * frame_width_resize_ratio).astype(int)
+                bk2d_y = np.round((label_data["body_keypoints2d"][0][1] + self.fhd_shift_y) * frame_height_resize_ratio).astype(int)
+                
+                if self.bk2d_x_old is None:
+                    self.bk2d_x_old = bk2d_x
+                    self.bk2d_y_old = bk2d_y
+                
+                bk2d_x = np.round(self.draw_alpha * bk2d_x + (1 - self.draw_alpha) * self.bk2d_x_old).astype(int)
+                bk2d_y = np.round(self.draw_alpha * bk2d_y + (1 - self.draw_alpha) * self.bk2d_y_old).astype(int)
+                
+                
+                self.bk2d_x_old = bk2d_x
+                self.bk2d_y_old = bk2d_y
                 # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
                 # print("after2", bk2d_x)
                 bk_3dx = label_data["body_keypoints3d"][0][0]
@@ -389,32 +404,32 @@ class MainWindow(QWidget):
                 radius = 5
 
                 for connection in connections_2d:
-                    if label_data["body_keypoints2d_conf"][0][connection[0]] > draw_conf_thr and \
-                       label_data["body_keypoints2d_conf"][0][connection[1]] > draw_conf_thr:
+                    if label_data["body_keypoints2d_conf"][0][connection[0]] > self.draw_conf_thr and \
+                       label_data["body_keypoints2d_conf"][0][connection[1]] > self.draw_conf_thr:
                         cv2.line(frame, (bk2d_x[connection[0]], bk2d_y[connection[0]]),
                                         (bk2d_x[connection[1]], bk2d_y[connection[1]]), 
                                         (0, 255, 0), 2)
 
                 # Draw the keypoints
                 for i in range(len(bk2d_x)):
-                    if label_data["body_keypoints2d_conf"][0][i] > draw_conf_thr:
+                    if label_data["body_keypoints2d_conf"][0][i] > self.draw_conf_thr:
                         cv2.circle(frame, (bk2d_x[i], bk2d_y[i]), radius, color2, -1, cv2.LINE_AA)
                         cv2.putText(frame, f"{bk_3dx[sort2d_to_3d[i]]}  {bk_3dy[sort2d_to_3d[i]]}  {bk_3dz[sort2d_to_3d[i]]}", 
                                     (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
                 # face_landmarks
-                face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + fhd_shift_x) * frame_width_resize_ratio).astype(int)
-                face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + fhd_shift_y) * frame_height_resize_ratio).astype(int)
+                face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + self.fhd_shift_x) * frame_width_resize_ratio).astype(int)
+                face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + self.fhd_shift_y) * frame_height_resize_ratio).astype(int)
 
                 radius = 2
 
                 for i in range(len(face_landmarks_x)):
                     cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
                 # bbox = label_data["face_bounding_box"][0].astype(int)
-                ptl = np.array([(bbox[0] + fhd_shift_x)* frame_width_resize_ratio,
-                                (bbox[1] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
-                pbr = np.array([(bbox[2] + fhd_shift_x)* frame_width_resize_ratio,
-                                (bbox[3] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
+                ptl = np.array([(bbox[0] + self.fhd_shift_x)* frame_width_resize_ratio,
+                                (bbox[1] + self.fhd_shift_y)* frame_height_resize_ratio]).astype(int)
+                pbr = np.array([(bbox[2] + self.fhd_shift_x)* frame_width_resize_ratio,
+                                (bbox[3] + self.fhd_shift_y)* frame_height_resize_ratio]).astype(int)
                 cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
 
             qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
