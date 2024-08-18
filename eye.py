@@ -108,13 +108,14 @@ class Face():
         self.face_wr = None
         self.face_cnt = 0
         self.dist_face = 0
-        self.camera_matrix = np.array([[380.5828, 0., 327.04076],
-                                       [0., 381.61306, 245.22762],
-                                       [0., 0., 1.]])
-        self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
-        self.P = np.array([[379.9881, 0., 326.52974, 0.],
-                           [0., 380.81802, 244.71673, 0.],
+        # for 1920 x 1080
+        self.camera_matrix = np.array([[1141.7483, 0., 981.12228],
+                                        [0., 858.629385, 551.762145],
+                                        [0., 0., 1.]])
+        self.P = np.array([[379.9881*3, 0., 326.52974*3, 0.],
+                           [0., 380.81802*2.25, 244.71673*2.25, 0.],
                            [0., 0., 1., 0.]])
+        self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
         self._reliable = False
         self.alpha = 0.05
         self.fov_v = fov_v
