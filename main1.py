@@ -200,8 +200,8 @@ class MainWindow(QWidget):
         self.lbl_img_3_2 = QLabel()
         self.lbl_img_3_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_2.setAlignment(Qt.AlignCenter)
-        img3_2_1 = QPixmap('icon/Property 1=Empty, Selected=Off.png')
-        img3_2_2 = QPixmap('icon/Property 1=Empty, Selected=On.png')
+        img3_2_1 = QPixmap('icon/PassengerEmptyOff.png')
+        img3_2_2 = QPixmap('icon/PassengerEmptyOn.png')
         self.lbl_img_3_2.setPixmap(img3_2_1)
         vbox3_2.addWidget(self.lbl_img_3_2, stretch=3)
         self.lbl_txt_3_2 = QLabel("Empty")
@@ -222,8 +222,8 @@ class MainWindow(QWidget):
         self.lbl_img_3_3 = QLabel()
         self.lbl_img_3_3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_3.setAlignment(Qt.AlignCenter)
-        img3_3_1 = QPixmap('icon/Property 1=Age 1~6, Selected=Off.png')
-        img3_3_2 = QPixmap('icon/Property 1=Age 1~6, Selected=On.png')
+        img3_3_1 = QPixmap('icon/PassengerKidsOff.png')
+        img3_3_2 = QPixmap('icon/PassengerKidsOn.png')
         self.lbl_img_3_3.setPixmap(img3_3_1)
         vbox3_3.addWidget(self.lbl_img_3_3, stretch=3)
         self.lbl_txt_3_3 = QLabel("Age 1~6")
@@ -247,8 +247,8 @@ class MainWindow(QWidget):
         self.lbl_img_3_4 = QLabel()
         self.lbl_img_3_4.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_4.setAlignment(Qt.AlignCenter)
-        img3_4_1 = QPixmap('icon/Property 1=AF05, Selected=Off.png')
-        img3_4_2 = QPixmap('icon/Property 1=AF05, Selected=On.png')
+        img3_4_1 = QPixmap('icon/PassengerAF05Off.png')
+        img3_4_2 = QPixmap('icon/PassengerAF05On.png')
         self.lbl_img_3_4.setPixmap(img3_4_1)
         vbox3_4.addWidget(self.lbl_img_3_4, stretch=3)
         self.lbl_txt_3_4 = QLabel("AF05")
@@ -272,8 +272,8 @@ class MainWindow(QWidget):
         self.lbl_img_3_5 = QLabel()
         self.lbl_img_3_5.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_5.setAlignment(Qt.AlignCenter)
-        img3_5_1 = QPixmap('icon/Property 1=AM50, Selected=Off.png')
-        img3_5_2 = QPixmap('icon/Property 1=AM50, Selected=On.png')
+        img3_5_1 = QPixmap('icon/PassengerAM50Off.png')
+        img3_5_2 = QPixmap('icon/PassengerAM50On.png')
         self.lbl_img_3_5.setPixmap(img3_5_1)
         vbox3_5.addWidget(self.lbl_img_3_5, stretch=3)
         self.lbl_txt_3_5 = QLabel("AM50")
@@ -297,8 +297,8 @@ class MainWindow(QWidget):
         self.lbl_img_3_6 = QLabel()
         self.lbl_img_3_6.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_6.setAlignment(Qt.AlignCenter)
-        img3_6_1 = QPixmap('icon/Property 1=AM95, Selected=Off.png')
-        img3_6_2 = QPixmap('icon/Property 1=AM95, Selected=On.png')
+        img3_6_1 = QPixmap('icon/PassengerAM95Off.png')
+        img3_6_2 = QPixmap('icon/PassengerAM95On.png')
         self.lbl_img_3_6.setPixmap(img3_6_1)
         vbox3_6.addWidget(self.lbl_img_3_6, stretch=3)
         self.lbl_txt_3_6 = QLabel("AM95")
@@ -425,7 +425,6 @@ class MainWindow(QWidget):
             else:
                 color = "rgb(255,255,255)"
 
-
             # Set the color using a stylesheet
             self.lbl_txt_2_1_1_2.setStyleSheet(f"color: {color}; font-size: 40px; font-weight: bold;")
             self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
@@ -434,7 +433,7 @@ class MainWindow(QWidget):
             self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Property 1={str(label_data["drowsiness"][0])}, Selected=Off.png'))
             self.lbl_img_3_1.setPixmap(QPixmap(f'icon/Property 1=Phone use (90%), Selected={"On" if label_data["phoneuse"][0]==1 else "Off"}.png'))
             self.lbl_txt_3_1.setText("Phone use (" + str(round(label_data["phone_use_conf"][0], 2)) + "%)")
-            self.lbl_img_3_2.setPixmap(QPixmap(f'icon/Property 1=Empty, Selected={"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
+            self.lbl_img_3_2.setPixmap(QPixmap(f'icon/PassengerEmpty{"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
                 f"""
                 {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 0 else "color: rgb(105, 105, 105);"}
@@ -442,7 +441,7 @@ class MainWindow(QWidget):
                 font-weight: bold;
                 """
             )
-            self.lbl_img_3_3.setPixmap(QPixmap(f'icon/Property 1=Age 1~6, Selected={"On" if label_data["passenger"][0] == 1 else "Off"}.png'))
+            self.lbl_img_3_3.setPixmap(QPixmap(f'icon/PassengerKids{"On" if label_data["passenger"][0] == 1 else "Off"}.png'))
             self.lbl_txt_3_3.setStyleSheet(
                 f"""
                             {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 1 else "color: rgb(105, 105, 105);"}
@@ -451,7 +450,7 @@ class MainWindow(QWidget):
                             """
             )
 
-            self.lbl_img_3_4.setPixmap(QPixmap(f'icon/Property 1=AF05, Selected={"On" if label_data["passenger"][0] == 2 else "Off"}.png'))
+            self.lbl_img_3_4.setPixmap(QPixmap(f'icon/PassengerAF05{"On" if label_data["passenger"][0] == 2 else "Off"}.png'))
             self.lbl_txt_3_4.setStyleSheet(
                 f"""
                             {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 2 else "color: rgb(105, 105, 105);"}
@@ -460,7 +459,7 @@ class MainWindow(QWidget):
                             """
             )
 
-            self.lbl_img_3_5.setPixmap(QPixmap(f'icon/Property 1=AM50, Selected={"On" if label_data["passenger"][0] == 3 else "Off"}.png'))
+            self.lbl_img_3_5.setPixmap(QPixmap(f'icon/PassengerAM50{"On" if label_data["passenger"][0] == 3 else "Off"}.png'))
             self.lbl_txt_3_5.setStyleSheet(
                 f"""
                             {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 3 else "color: rgb(105, 105, 105);"}
@@ -469,7 +468,7 @@ class MainWindow(QWidget):
                             """
             )
 
-            self.lbl_img_3_6.setPixmap(QPixmap(f'icon/Property 1=AM95, Selected={"On" if label_data["passenger"][0] == 4 else "Off"}.png'))
+            self.lbl_img_3_6.setPixmap(QPixmap(f'icon/PassengerAM95{"On" if label_data["passenger"][0] == 4 else "Off"}.png'))
             self.lbl_txt_3_6.setStyleSheet(
                 f"""
                             {"color: rgb(17, 94, 255);" if label_data["passenger"][0] == 4 else "color: rgb(105, 105, 105);"}
