@@ -1,7 +1,7 @@
 import sys
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QHBoxLayout, QApplication, QSizePolicy
+from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtCore import QTimer, Qt
 import numpy as np
 import threading
 import cv2
@@ -30,6 +30,22 @@ connections_2d = [
 ]
 
 sort2d_to_3d = (8,9,12,10,13,11,14,4,1,5,2,6,3)
+style_105_20 = """
+            color: rgb(105, 105, 105);
+            font-size: 20px;
+            font-weight: bold;
+            """
+style_255_40 = """
+            color: rgb(255, 255, 255);
+            font-size: 40px;
+            font-weight: bold;
+            """
+style_255_20 = """
+            /* color: rgb(105, 105, 105); */
+            color: rgb(255, 255, 255);
+            font-size: 20px;
+            font-weight: bold;
+            """
 
 class MainWindow(QWidget):
     def __init__(self, client, use, *args, **kwargs):
@@ -83,66 +99,42 @@ class MainWindow(QWidget):
         lbl_txt_2_1_1_1.setAlignment(Qt.AlignBottom)
         lbl_txt_2_1_1_1.setContentsMargins(20, 0, 0, 0)
         lbl_txt_2_1_1_1.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         vbox2_1_1_1.addWidget(lbl_txt_2_1_1_1)
         self.lbl_txt_2_1_1_2 = QLabel("100cm")
         self.lbl_txt_2_1_1_2.setAlignment(Qt.AlignTop)
         self.lbl_txt_2_1_1_2.setContentsMargins(20, 0, 0, 0)
         self.lbl_txt_2_1_1_2.setStyleSheet(
-            """
-            color: rgb(255, 255, 255);
-            font-size: 40px;
-            font-weight: bold;
-            """
+            style_255_40
         )
         vbox2_1_1_1.addWidget(self.lbl_txt_2_1_1_2)
         lbl_txt_2_1_1_3 = QLabel("Eye Openness")
         lbl_txt_2_1_1_3.setAlignment(Qt.AlignBottom)
         lbl_txt_2_1_1_3.setContentsMargins(20, 0, 0, 0)
         lbl_txt_2_1_1_3.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         vbox2_1_1_1.addWidget(lbl_txt_2_1_1_3)
         self.lbl_txt_2_1_1_4 = QLabel("64%")
         self.lbl_txt_2_1_1_4.setAlignment(Qt.AlignTop)
         self.lbl_txt_2_1_1_4.setContentsMargins(20, 0, 0, 0)
         self.lbl_txt_2_1_1_4.setStyleSheet(
-            """
-            color: rgb(255, 255, 255);
-            font-size: 40px;
-            font-weight: bold;
-            """
+            style_255_40
         )
         vbox2_1_1_1.addWidget(self.lbl_txt_2_1_1_4)
         lbl_txt_2_1_1_5 = QLabel("Body Size")
         lbl_txt_2_1_1_5.setAlignment(Qt.AlignBottom)
         lbl_txt_2_1_1_5.setContentsMargins(20, 0, 0, 0)
         lbl_txt_2_1_1_5.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         vbox2_1_1_1.addWidget(lbl_txt_2_1_1_5)
         self.lbl_txt_2_1_1_6 = QLabel("146cm")
         self.lbl_txt_2_1_1_6.setAlignment(Qt.AlignTop)
         self.lbl_txt_2_1_1_6.setContentsMargins(20, 0, 0, 0)
         self.lbl_txt_2_1_1_6.setStyleSheet(
-            """
-            color: rgb(255, 255, 255);
-            font-size: 40px;
-            font-weight: bold;
-            """
+            style_255_40
         )
         vbox2_1_1_1.addWidget(self.lbl_txt_2_1_1_6)
 
@@ -161,12 +153,7 @@ class MainWindow(QWidget):
         lbl_txt_2_1_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         lbl_txt_2_1_2.setAlignment(Qt.AlignHCenter)
         lbl_txt_2_1_2.setStyleSheet(
-            """
-            /* color: rgb(105, 105, 105); */
-            color: rgb(255, 255, 255);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_255_20
         )
         flg2_1_2 = [1]
         vbox2_1_2.addWidget(lbl_txt_2_1_2, stretch=1)
@@ -198,12 +185,7 @@ class MainWindow(QWidget):
         self.lbl_txt_3_1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_txt_3_1.setAlignment(Qt.AlignHCenter)
         self.lbl_txt_3_1.setStyleSheet(
-            """
-            /* color: rgb(105, 105, 105); */
-            color: rgb(255, 255, 255);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_255_20
         )
         flg3_1 = [1]
         vbox3_1.addWidget(self.lbl_txt_3_1, stretch=1)
@@ -221,11 +203,7 @@ class MainWindow(QWidget):
         self.lbl_txt_3_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_txt_3_2.setAlignment(Qt.AlignHCenter)
         self.lbl_txt_3_2.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         flg3_2 = [1]
         vbox3_2.addWidget(self.lbl_txt_3_2, stretch=1)
@@ -243,16 +221,9 @@ class MainWindow(QWidget):
         self.lbl_txt_3_3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_txt_3_3.setAlignment(Qt.AlignHCenter)
         self.lbl_txt_3_3.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         flg3_3 = [1]
-        # self.timer3_3 = QTimer()
-        # self.timer3_3.timeout.connect(lambda: self.switch_image(self.lbl_img_3_3, self.lbl_txt_3_3, img3_3_1, img3_3_2, flg3_3))
-        # self.timer3_3.start(1000)
         vbox3_3.addWidget(self.lbl_txt_3_3, stretch=1)
         hbox3.addLayout(vbox3_3, stretch=9)
 
@@ -268,16 +239,9 @@ class MainWindow(QWidget):
         self.lbl_txt_3_4.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_txt_3_4.setAlignment(Qt.AlignHCenter)
         self.lbl_txt_3_4.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         flg3_4 = [1]
-        # self.timer3_4 = QTimer()
-        # self.timer3_4.timeout.connect(lambda: self.switch_image(self.lbl_img_3_4, self.lbl_txt_3_4, img3_4_1, img3_4_2, flg3_4))
-        # self.timer3_4.start(1000)
         vbox3_4.addWidget(self.lbl_txt_3_4, stretch=1)
         hbox3.addLayout(vbox3_4, stretch=9)
 
@@ -293,16 +257,9 @@ class MainWindow(QWidget):
         self.lbl_txt_3_5.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_txt_3_5.setAlignment(Qt.AlignHCenter)
         self.lbl_txt_3_5.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         flg3_5 = [1]
-        # self.timer3_5 = QTimer()
-        # self.timer3_5.timeout.connect(lambda: self.switch_image(self.lbl_img_3_5, self.lbl_txt_3_5, img3_5_1, img3_5_2, flg3_5))
-        # self.timer3_5.start(1000)
         vbox3_5.addWidget(self.lbl_txt_3_5, stretch=1)
         hbox3.addLayout(vbox3_5, stretch=9)
 
@@ -318,16 +275,9 @@ class MainWindow(QWidget):
         self.lbl_txt_3_6.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_txt_3_6.setAlignment(Qt.AlignHCenter)
         self.lbl_txt_3_6.setStyleSheet(
-            """
-            color: rgb(105, 105, 105);
-            font-size: 20px;
-            font-weight: bold;
-            """
+            style_105_20
         )
         flg3_6 = [1]
-        # self.timer3_6 = QTimer()
-        # self.timer3_6.timeout.connect(lambda: self.switch_image(self.lbl_img_3_6, self.lbl_txt_3_6, img3_6_1, img3_6_2, flg3_6))
-        # self.timer3_6.start(1000)
         vbox3_6.addWidget(self.lbl_txt_3_6, stretch=1)
         hbox3.addLayout(vbox3_6, stretch=9)
 
@@ -342,7 +292,7 @@ class MainWindow(QWidget):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_view)
-        self.timer.start(30)  # Update every 30 ms
+        self.timer.start(33)  # Update every 30 ms
 
     def update_view(self):
         if not self.client.frame_queue.empty() and not self.client.label_data_queue.empty():
@@ -359,7 +309,6 @@ class MainWindow(QWidget):
             h, w = frame.shape
             bytes_per_line = w * 3
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-            
             
             area_lmin = 0
             area_rmax = 1024
@@ -420,20 +369,39 @@ class MainWindow(QWidget):
                                     (bk2d_x[i], bk2d_y[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
                 # face_landmarks
+            if label_data["face_landmarks_x"][0][0] == -1:
+                pass
+            else:
                 face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + self.fhd_shift_x) * frame_width_resize_ratio).astype(int)
                 face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + self.fhd_shift_y) * frame_height_resize_ratio).astype(int)
 
-                radius = 2
-
+                # radius = 2
                 for i in range(len(face_landmarks_x)):
-                    cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
+                    cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), 2, (24, 24, 244), -1, cv2.LINE_AA)
+
                 # bbox = label_data["face_bounding_box"][0].astype(int)
                 ptl = np.array([(bbox[0] + self.fhd_shift_x)* frame_width_resize_ratio,
                                 (bbox[1] + self.fhd_shift_y)* frame_height_resize_ratio]).astype(int)
                 pbr = np.array([(bbox[2] + self.fhd_shift_x)* frame_width_resize_ratio,
                                 (bbox[3] + self.fhd_shift_y)* frame_height_resize_ratio]).astype(int)
                 cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
-
+                
+                self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
+                self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
+                
+                # Phone use
+                if self.phone_use is None:
+                    self.phone_use = 1 if label_data["phoneuse"][0] == 1 else 0
+                _phone_use = 1 if label_data["phoneuse"][0] == 1 else 0
+                self.phone_use = self.draw_alpha * _phone_use + (1 - self.draw_alpha) * self.phone_use
+                is_using_phone = self.phone_use > 0.8
+                self.lbl_img_3_1.setPixmap(QPixmap(f'icon/PhoneUse{"On" if is_using_phone else "Off"}.png'))
+                if is_using_phone:
+                    phone_conf = label_data["phone_use_conf"][0]
+                else:
+                    phone_conf = 0
+                self.lbl_txt_3_1.setText("Phone use (" + str(round(phone_conf,2)) + "%)")                  
+                
             qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
             #qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_Grayscale8).rgbSwapped()
 
@@ -452,25 +420,10 @@ class MainWindow(QWidget):
 
             # Set the color using a stylesheet
             self.lbl_txt_2_1_1_2.setStyleSheet(f"color: {color}; font-size: 40px; font-weight: bold;")
-            self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
             self.lbl_txt_2_1_1_6.setText(str(label_data['height'][0]))
             # bodysize
-            
-            
-            self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
-            
-            # Phone use
-            if self.phone_use is None:
-                self.phone_use = 1 if label_data["phoneuse"][0] == 1 else 0
-            _phone_use = 1 if label_data["phoneuse"][0] == 1 else 0
-            self.phone_use = self.draw_alpha * _phone_use + (1 - self.draw_alpha) * self.phone_use
-            is_using_phone = self.phone_use > 0.8
-            self.lbl_img_3_1.setPixmap(QPixmap(f'icon/PhoneUse{"On" if is_using_phone else "Off"}.png'))
-            if is_using_phone:
-                phone_conf = label_data["phone_use_conf"][0]
-            else:
-                phone_conf = 0
-            self.lbl_txt_3_1.setText("Phone use (" + str(round(phone_conf,2)) + "%)")      
+                        
+                
             self.lbl_img_3_2.setPixmap(QPixmap(f'icon/PassengerEmpty{"On" if label_data["passenger"][0] == 0 else "Off"}.png'))
             self.lbl_txt_3_2.setStyleSheet(
                 f"""
@@ -524,11 +477,7 @@ class MainWindow(QWidget):
         if flag[0] == 0:
             lbl_img.setPixmap(img1)
             lbl_txt.setStyleSheet(
-                """
-                color: rgb(105, 105, 105);
-                font-size: 20px;
-                font-weight: bold;
-                """
+                style_105_20
             )
             flag[0] = 1
         else:
