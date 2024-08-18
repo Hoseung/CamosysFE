@@ -42,9 +42,9 @@ class PostProcessor:
         
         eye = Eye()
         
-        label_array['passenger'][0] = -1
+        label_array['passenger'][0] = 0
+        height_class_before = label_array['passenger'][0]
         while True:
-            # Ensure the first yield produces an int
             # Update incoming values with new ones sent to the generator
             label_array = yield 
             box = label_array['face_bounding_box'][0]
@@ -57,16 +57,22 @@ class PostProcessor:
             
             i += 1
             # cnt += 1
+            # FACE
             face_wr_final = 90 
             face_hr_final = 100
-            
             dist_face = 0
             # Valid face
-            print("CNT", cnt)
+            # print("CNT", cnt)
+            # Face detected in the AOI
+            empty = True
             if box is not None and box[0] > self.area_lmin and box[3] < self.area_rmax:
+                empty = False    
+                # If Face width not measurable
                 if any(flmk_x[36:42] == 0) or any(flmk_y[36:42] == 0):
-                    # print("Invalid face landmarks")
-                    continue    
+                    print("Invalid face landmarks")
+                    print(flmk_x)
+                    print(flmk_y)
+                    continue
                 eye.update_EAR((flmk_x, flmk_y))
                 face_width = np.mean(flmk_x[14:17] - flmk_x[:3]) 
                 face_height = 0.5*(np.linalg.norm(flmk_y[0] - flmk_y[9])+
@@ -87,7 +93,7 @@ class PostProcessor:
                     # print(face_height, face_width, dist_fh, dist_fw, dist_face)
                 
                 if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold and keypoints_2d_conf[12] > conf_threshold:
-                    print("Full body visible")
+                    # print("Full body visible")
                     height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.95)
                     if dist:
                         #takes.append(True)
@@ -118,6 +124,8 @@ class PostProcessor:
                             # print(f"at dist {dist:.2f}")                            
                             initial_guess_face_h.append(face_hr)
                             initial_guess_face_w.append(face_wr)
+                            
+                            # Estimating the passenger class
                             label_array['passenger'][0] = -1
                             
                         elif cnt == self.cnt_initial: 
@@ -136,21 +144,23 @@ class PostProcessor:
                         pass
                         
                     # scale
-                    print("key3d", key3d[2,:])
+                    # print("key3d", key3d[2,:])
                     key3d[2,:] *= scale3d
-                    print("key3d after scale", key3d[2,:])
+                    # print("key3d after scale", key3d[2,:])
                     # translation``
                     key3d[2,:] += (z_dist_foot - key3d[2, self.foot_ind3d[self.dt.foot_ind]])
-                    print("key3d after translation", key3d[2,:])
+                    # print("key3d after translation", key3d[2,:])
 
                     # update only when the person is detected
-                    dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
+                    # dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
                 else:
-                    dist_neck = 0
+                    pass
+                    # dist_neck = 0
                 # print(f"Height  {running_avg*100}")
                 # if cnt % 10 == 1 and running_avg > 0:
 
-            else: # when no person is detected
+            # when detected person is gone
+            elif running_avg > 0:
                 no_person += 1
                 if no_person > 10:
                     # print("No person detected!")
@@ -162,9 +172,13 @@ class PostProcessor:
                     no_person = 0
                     initial_guess = []
                     label_array['distance'] = -1
+                    empty = True
+            else:
+                empty = True # or pass?
                     
-            if running_avg >= 0:
-                print("SETTING HEIGHT - VALID")
+            #if running_avg > 0:
+            if not empty:
+                # print("SETTING HEIGHT - VALID")
                 if running_avg*self.height_factor > 0.40 and running_avg*self.height_factor < 1.20:
                     label_array['passenger'][0] = 1
                 elif running_avg*self.height_factor >= 1.2 and running_avg*self.height_factor < 1.60:
@@ -176,15 +190,28 @@ class PostProcessor:
                 elif running_avg*self.height_factor >= 1.85 and running_avg*self.height_factor < 2.3:
                     label_array['passenger'][0] = 4
                 else:
+                    # Something wrong
                     label_array['passenger'][0] = -1
             # print("Distance to camera", dist_face)
             
-            print("RUNNING AVG", running_avg)
+            # print("RUNNING AVG", running_avg)
+                label_array['height'][0] = min(running_avg*100*self.height_factor, 999)
+                label_array['distance'][0] = min(dist_face*100, 9999)
+                label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
+                label_array['drowsiness'][0] = eye.drowsy_val
             
-            label_array['height'][0] = min(running_avg*100*self.height_factor, 999)
-            label_array['distance'][0] = min(dist_face*100, 9999)
-            label_array['eye_openness'][0] = min(int(eye.EAR/0.4*100), 100)
-            label_array['drowsiness'][0] = eye.drowsy_val
+            else:
+                # print("SETTING HEIGHT - INVALID")
+                label_array['passenger'][0] = 0
+                label_array['height'][0] = 0
+                label_array['distance'][0] = -1
+                label_array['eye_openness'][0] = 0
+                label_array['drowsiness'][0] = 0
             
-            print("HEIGHT CLASS this time", label_array['passenger'][0])
+            
+            # DEBUG
+            if height_class_before != label_array['height'][0]:
+                print("HEIGHT CLASS Changed", label_array['passenger'][0])
+                height_class_before = label_array['height'][0]
+            # print("HEIGHT CLASS this time", label_array['passenger'][0])
             # yield dist_neck
