@@ -41,6 +41,11 @@ class DistanceTriangle():
         return tuple(undistorted_points[0][0])
     
     def undistort_normed(self, p):
+        """
+        Undistorting causes points to move out of the scene (if central part's pix/angle is retained)
+        or points' coordinates to shrink (if the top/bottom part's pix/angle is retained)
+        So, undistorted coordinates need to be normalized.
+        """
         _new_p1 = self.undistort_points(*p)
         return (_new_p1[0], (_new_p1[1]-self.undistort_top[1])/self.undistort_scale*self.img_height)
     

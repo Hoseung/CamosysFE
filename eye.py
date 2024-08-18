@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial.distance import pdist
+import cv2
 
 def std2d(x, y):
     return np.sqrt(np.var(x) + np.var(y))
@@ -86,3 +87,91 @@ class Eye:
         self.EAR_max = 0
         self.EARs = []
         self.drowsy_val = 0
+        
+        
+class Face():
+    def __init__(self, 
+                 n_initial=20,
+                 fov_v=91,
+                 image_width = 1024,
+                 image_height = 1024):
+        self._initial_guess_face_h = np.zeros(n_initial)
+        self._initial_guess_face_w = np.zeros(n_initial)
+        self._initial_count = 0
+        self.face_hr = None
+        self.face_wr = None
+        self.dist_face = 0
+        self.camera_matrix = np.array([[380.5828, 0., 327.04076],
+                                       [0., 381.61306, 245.22762],
+                                       [0., 0., 1.]])
+        self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
+        self.P = np.array([[379.9881, 0., 326.52974, 0.],
+                           [0., 380.81802, 244.71673, 0.],
+                           [0., 0., 1., 0.]])
+        
+        self.fov_v = fov_v
+        self.img_height = image_height
+        self.img_width = image_width
+        self.deg_per_pix = self.fov_v/self.img_height
+        self.set_undistort()
+
+    def set_undistort(self):
+        self.undistort_top = self.undistort_points(self.img_width/2, 0)
+        self.undistort_bottom = self.undistort_points(self.img_width/2, self.img_height)
+        self.undistort_scale = np.abs(self.undistort_bottom[1] - self.undistort_top[1])
+
+    def undistort_points(self, x, y):
+        points = np.array([[x, y]], dtype=np.float32).reshape(-1, 1, 2)
+        undistorted_points = cv2.undistortPoints(points, self.camera_matrix, self.dist_coeffs, P=self.P)
+        return tuple(undistorted_points[0][0])
+    
+    def undistort_normed(self, x, y):
+        """
+        Undistorting causes points to move out of the scene (if central part's pix/angle is retained)
+        or points' coordinates to shrink (if the top/bottom part's pix/angle is retained)
+        So, undistorted coordinates need to be normalized.
+        """
+        #_new_p1 = self.undistort_points(x, y)
+        #points = np.array([[x, y]], dtype=np.float32).reshape(-1, 1, 2)
+        points = np.vstack([x, y]).T.reshape(-1, 1, 2)
+        _new_p1 = cv2.undistortPoints(points, self.camera_matrix, self.dist_coeffs, P=self.P)
+        return (_new_p1[:,0,0], (_new_p1[:,0,1]-self.undistort_top[1])/self.undistort_scale*self.img_height)    
+        
+    def update_face_wh(self, flmk_x, flmk_y):
+        #undistorted_ = np.array([self.undistort_normed(p) for p in keypoints_2d.T]).T
+        flmk_x, flmk_y = self.undistort_normed(flmk_x, flmk_y)
+        self._face_width = np.mean(flmk_x[14:17] - flmk_x[:3])
+        self._face_height = 0.5*(np.linalg.norm(flmk_y[0] - flmk_y[9])+
+                        np.linalg.norm(flmk_y[16] - flmk_y[9]))
+            
+    def update_face_dist(self, flmk_x, flmk_y):
+        # print(f"Ratio {eye_dist_ratio:.2f}")
+        # It's ratio, scale-invariant. No need to worry about undistort
+        # To some degrees, at least.
+        eye_dist_ratio = self.eye_ratio(flmk_x, flmk_y)        
+        # D1 * h1 = D2 * h2  ->  D2 = D1 * h1 / h2
+        dist_fh = self.face_hr / self._face_height
+        dist_fw = self.face_wr / self._face_width
+        # Magic ratio == ad-hoc
+        self.dist_face = eye_dist_ratio * dist_fh + (1-eye_dist_ratio)*dist_fw 
+            
+    def add_guess(self, dist):
+        face_wr = self._face_width * dist # pixel / meter (distorted)
+        face_hr = self._face_height * dist
+        self._initial_guess_face_h[self._initial_count] = face_hr
+        self._initial_guess_face_w[self._initial_count] = face_wr
+        self._initial_count += 1
+        
+    def fix_face_size(self):
+        self.face_wr = np.percentile(self._initial_guess_face_w, 90)
+        self.face_hr = np.percentile(self._initial_guess_face_h, 90)
+        self._initial_count = 0
+        
+    @staticmethod
+    def eye_ratio(flmk_x, flmk_y):
+        std_single = max([std2d(flmk_x[36:42], flmk_y[36:42]), 
+                        std2d(flmk_x[42:48], flmk_y[42:48])])
+        
+        std_both = std2d(flmk_x[36:48], flmk_y[36:48])
+        return std_single/std_both * 2 # ~ 0.5
+    
