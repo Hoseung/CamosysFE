@@ -38,7 +38,6 @@ class PostProcessor:
         cnt = 0
         scale3d = 1.0
         no_person = 0
-        # dist_neck = -1
         conf_threshold = 60
         
         eye = Eye()
