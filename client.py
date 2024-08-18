@@ -26,7 +26,7 @@ class Client:
             '=h b b b b B b 68H 68H 15H 15H 15H 13H 13H 13B 4H')
         self.running = True
         
-        self.image_generator = CameraDataGenerator(camera_index=0, 
+        self.image_generator = CameraDataGenerator(camera_index=2, 
                                                    crop=(56,1080, 448, 1472))
         self.post_processor = PostProcessor(camera_height = camera_height, 
                                             camera_pitch = camera_pitch,
@@ -41,8 +41,8 @@ class Client:
             ("phone_use_conf", np.int8),
             ("height", np.uint8), 
             ("passenger", np.int8), 
-            ("face_landmarks_x", np.uint16, (68)),  # 68 elements of uint16
-            ("face_landmarks_y", np.uint16, (68)),  # 68 elements of uint16
+            ("face_landmarks_x", np.int16, (68)),  # 68 elements of uint16
+            ("face_landmarks_y", np.int16, (68)),  # 68 elements of uint16
             ("body_keypoints3d", np.int16, (3, 15)),  # 15 elements of uint16 in 3D
             ("body_keypoints2d", np.uint16, (2, 13)),  # 13 elements of uint16 in 2D
             ("body_keypoints2d_conf", np.uint8, (13,)),  # 13 elements of uint16 in 1D
@@ -72,9 +72,9 @@ class Client:
             self.sock.close()
 
     def receive_frame(self):
-        flist = glob("../CamosysFE_data/test17/frame*.jpg")
+        flist = glob("../CamosysFE_data/test_9cm/frame*.jpg")
         flist.sort()
-        labels = pickle.load(open("../CamosysFE_data/test17/label_data.pkl", "rb"))
+        labels = pickle.load(open("../CamosysFE_data/test_9cm/label_data.pkl", "rb"))
 
         for i, label_array in enumerate(labels):
             time.sleep(0.03)
@@ -107,8 +107,9 @@ class Client:
                 self.label_data_queue.put(label_array)
             # self.frame_queue.put(frame)
             # self.label_data_queue.put(label_array)
+        print("DONE")
 
-    def receive_frame_(self):
+    def receive_frame(self):
         save = []
         cnt = 0
         bad = 0
@@ -151,7 +152,7 @@ class Client:
                 if not self.label_data_queue.full():
                     self.label_data_queue.put(label_array)
                 
-                print(f"Count -- {cnt}")
+                # print(f"Count -- {cnt}")
                 if cnt % 100 == 0:
                     pickle.dump(save, open("../CamosysFE_data/label_data.pkl", "wb"))
                     
