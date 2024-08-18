@@ -80,6 +80,9 @@ class PostProcessor:
                 
                 # print("Full body visible")
                 if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold or keypoints_2d_conf[12] > conf_threshold:
+                    ind_ok = np.argmax([keypoints_2d_conf[11], keypoints_2d_conf[12]])
+                    self.dt.foot_ind = ind_ok
+                    # print("Foot index", self.dt.foot_ind)
                     height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.85)
                     
                     if dist:

@@ -10,16 +10,26 @@ class DistanceTriangle():
                  camera_height = 1.5, 
                  fov_v=91,
                  horizontal_fov_deg=166, 
-                 image_width = 1024,
-                 image_height = 1024, 
+                 image_width = 1920,
+                 image_height = 1080, 
                  camera_pitch = -20):
-        self.camera_matrix = np.array([[380.5828, 0., 327.04076],
-                                       [0., 381.61306, 245.22762],
-                                       [0., 0., 1.]])
-        self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
-        self.P = np.array([[379.9881, 0., 326.52974, 0.],
-                           [0., 380.81802, 244.71673, 0.],
+        
+        # For 640x480
+        # self.camera_matrix = np.array([[380.5828, 0., 327.04076],
+        #                                [0., 381.61306, 245.22762],
+        #                                [0., 0., 1.]])
+        # self.P = np.array([[379.9881, 0., 326.52974, 0.],
+        #                    [0., 380.81802, 244.71673, 0.],
+        #                    [0., 0., 1., 0.]])
+        
+        # for 1920 x 1080
+        self.camera_matrix = np.array([[1141.7483, 0., 981.12228],
+                                        [0., 858.629385, 551.762145],
+                                        [0., 0., 1.]])
+        self.P = np.array([[379.9881*3, 0., 326.52974*3, 0.],
+                           [0., 380.81802*2.25, 244.71673*2.25, 0.],
                            [0., 0., 1., 0.]])
+        self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
         
         self.fov_v = fov_v
         self.img_height = image_height
@@ -27,7 +37,7 @@ class DistanceTriangle():
         self.deg_per_pix = self.fov_v/self.img_height
         self.camera_height = camera_height
         self.camera_pitch = camera_pitch
-        self.u_l_ratio = 1.3
+        self.u_l_ratio = 1.2
         self.u_l_alpha = 0.1
         self.set_undistort()
         self.foot_ind = 0
@@ -110,35 +120,39 @@ class DistanceTriangle():
     def cal_body_size(self, keypoints_2d):
         p_head = keypoints_2d[:,0]
         feet = [keypoints_2d[:,11], keypoints_2d[:,12]]
-        heights = np.array([self.get_obj_size(foot, p_head, verbose=False) 
-                            for foot in feet])
-        if max(heights) > 1.1 * min(heights):
-            # If uneven, take larger one
-            self.foot_ind = np.argmax(heights)
-            height = heights[self.foot_ind]
-            dist = self.dist_camroot_to_foot(feet[self.foot_ind][1])
-            # print("[cal_body_size] Height", height, "Dist", dist)
-        else:
-            height = np.mean(heights)
-            dist = 0.5*(self.dist_camroot_to_foot(feet[0][1]) + \
-                self.dist_camroot_to_foot(feet[1][1]))
-            self.foot_ind = 0
+        # heights = np.array([self.get_obj_size(foot, p_head, verbose=False) 
+                            # for foot in feet])
+        # if max(heights) > 1.1 * min(heights):
+        #     # If uneven, take larger one
+        #     # self.foot_ind = np.argmax(heights)
+        #     height = heights[self.foot_ind]
+        #     dist = self.dist_camroot_to_foot(feet[self.foot_ind][1])
+        #     # print("[cal_body_size] Height", height, "Dist", dist)
+        # else:
+        # height = np.mean(heights)
+        height = self.get_obj_size(feet[self.foot_ind], p_head, verbose=False)
+        dist = 0.5*(self.dist_camroot_to_foot(feet[0][1]) + \
+            self.dist_camroot_to_foot(feet[1][1]))
+        # self.foot_ind = 0
             # print("[cal_body_size] Height", height, "Dist", dist, "MEAN")
         
         return height, dist
     
     def height_taken(self, keypoints_2d, take_frac = 0.86):
+        keypoints_2d[1,:] += 56
         undistorted = np.array([self.undistort_normed(p) for p in keypoints_2d.T]).T
-        new_u_l_ratio = self.upper_lower_ratio(undistorted)
+        height_pixel, bone_sum_pixel, lower = self.get_bone_length_sum(undistorted)
+        new_u_l_ratio = (height_pixel - lower) / lower
+        #new_u_l_ratio = self.upper_lower_ratio(undistorted)
         if abs(new_u_l_ratio - self.u_l_ratio) / self.u_l_ratio > 0.2:
             print("[ignore] U-L ratio changed", new_u_l_ratio, self.u_l_ratio)
             # Probably not in straight pose
             return False, False
         else: 
-            height_pixel, bone_sum_pixel = get_bone_length_sum(undistorted)
-            self.update_uppoer_lower_ratio(new_u_l_ratio)
+            
+            # self.update_uppoer_lower_ratio(new_u_l_ratio)
             if take_frac * height_pixel > bone_sum_pixel:
-                print("[take] U-L ratio", new_u_l_ratio, self.u_l_ratio)
+                # print("[take] U-L ratio", new_u_l_ratio, self.u_l_ratio)
                 # print("[height_taken] Measured height", height_pixel, "bone_sum", bone_sum_pixel)
                 height, dist = self.cal_body_size(undistorted)
                 return height, dist
@@ -152,11 +166,43 @@ class DistanceTriangle():
         """
         keypoints_2d: 13x2
         """
-        lower_body = take_avg_or_larger(np.linalg.norm(keypoints_2d[:,7] - keypoints_2d[:,11]), 
-                                        np.linalg.norm(keypoints_2d[:,8] - keypoints_2d[:,12]))
+        if self.foot_ind == 0:
+            lower_body = np.linalg.norm(keypoints_2d[:,7] - keypoints_2d[:,11])
+        else:
+            lower_body = np.linalg.norm(keypoints_2d[:,8] - keypoints_2d[:,12])
+            
+        print("Lower body", lower_body)
+        
         upper_body = take_avg_or_larger(np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,7]),
                                         np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,8]))
+        print("Upper body", upper_body)
+
         return upper_body / lower_body
+    
+    def get_bone_length_sum(self, keypoints_2d):
+        # in pixels
+        #lc = length_connections_2d
+        if self.foot_ind == 0:
+            torso = np.linalg.norm(keypoints_2d[:,1] - keypoints_2d[:,7])
+            thigh = np.linalg.norm(keypoints_2d[:,7] - keypoints_2d[:,9])
+            calf  = np.linalg.norm(keypoints_2d[:,9] - keypoints_2d[:,11])
+            lower = np.linalg.norm(keypoints_2d[:,7] - keypoints_2d[:,11])
+            height_pixel = np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,11])
+        elif self.foot_ind == 1:
+            torso = np.linalg.norm(keypoints_2d[:,2] - keypoints_2d[:,8])
+            thigh = np.linalg.norm(keypoints_2d[:,8] - keypoints_2d[:,10])
+            calf  = np.linalg.norm(keypoints_2d[:,10] - keypoints_2d[:,12])
+            lower = np.linalg.norm(keypoints_2d[:,8] - keypoints_2d[:,12])
+            height_pixel = np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,12])    
+        # print("torso, thigh, calf", torso, thigh, calf)
+        bone_sum_pixel = torso + thigh + calf
+        
+        # print("keypoints", keypoints_2d[:,0], keypoints_2d[:,11])
+        # print("head_to_lfoot")
+        # height_pixel = take_avg_or_larger(head_to_lfoot, head_to_rfoot)
+        # bone_sum_pixel = take_avg_or_larger(l_height, r_height)
+        
+        return height_pixel, bone_sum_pixel, lower
 
 
 def take_avg_or_larger(v1, v2, threshold=1.2):
@@ -165,24 +211,3 @@ def take_avg_or_larger(v1, v2, threshold=1.2):
     else:
         return np.mean((v1,v2))
             
-def get_bone_length_sum(keypoints_2d):
-    # in pixels
-    #lc = length_connections_2d
-    l_torso = np.linalg.norm(keypoints_2d[:,1] - keypoints_2d[:,7])
-    l_thigh = np.linalg.norm(keypoints_2d[:,7] - keypoints_2d[:,9])
-    l_calf  = np.linalg.norm(keypoints_2d[:,9] - keypoints_2d[:,11])
-    # print("l_torso, l_thigh, l_calf", l_torso, l_thigh, l_calf)
-    l_height = l_torso + l_thigh + l_calf
-    r_torso = np.linalg.norm(keypoints_2d[:,2] - keypoints_2d[:,8])
-    r_thigh = np.linalg.norm(keypoints_2d[:,8] - keypoints_2d[:,10])
-    r_calf  = np.linalg.norm(keypoints_2d[:,10] - keypoints_2d[:,12])
-    r_height = r_torso + r_thigh + r_calf
-    # print("r_torso, r_thigh, r_calf", r_torso, r_thigh, r_calf)
-    head_to_lfoot = np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,11])
-    head_to_rfoot = np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,12])
-    # print("keypoints", keypoints_2d[:,0], keypoints_2d[:,11])
-    # print("head_to_lfoot")
-    height_pixel = take_avg_or_larger(head_to_lfoot, head_to_rfoot)
-    bone_sum_pixel = take_avg_or_larger(l_height, r_height)
-    
-    return height_pixel, bone_sum_pixel
