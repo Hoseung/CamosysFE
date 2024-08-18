@@ -69,9 +69,9 @@ class PostProcessor:
                 empty = False
                 # If Face width not measurable
                 if any(flmk_x == -1):
-                    print("Invalid face landmarks")
-                    print(flmk_x)
-                    print(flmk_y)
+                    # print("Invalid face landmarks")
+                    # print(flmk_x)
+                    # print(flmk_y)
                     empty = True
                     continue
                 

@@ -5,22 +5,6 @@ import cv2
 def std2d(x, y):
     return np.sqrt(np.var(x) + np.var(y))
 
-def gini_coefficient_2d(points):
-    # Calculate pairwise distances between points
-    pairwise_distances = pdist(points, 'euclidean')
-    
-    # Sort distances
-    sorted_distances = np.sort(pairwise_distances)
-    
-    n = len(sorted_distances)
-    cumulative_sum = np.cumsum(sorted_distances)
-    
-    # Gini coefficient calculation
-    gini = (2 / n) * np.sum((np.arange(1, n+1) * sorted_distances)) / cumulative_sum[-1] - (n + 1) / n
-    
-    return gini
-    #return max(0, gini) 
-
 def euclidean_dist(a, b):
     return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
@@ -31,7 +15,7 @@ def eye_aspect_ratio(eye):
     A = euclidean_dist(eye[1], eye[5])
     B = euclidean_dist(eye[2], eye[4])
     C = euclidean_dist(eye[0], eye[3])
-    if C < A or C < B:
+    if C < A or C < B or np.isfinite(A)*np.isfinite(B)*np.isfinite(C) == False:
         return 0.5, 0.5, 0.5
     
     ear = (alpha * A + beta * B) / (2.0 * C)
