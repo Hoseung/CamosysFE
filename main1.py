@@ -177,8 +177,8 @@ class MainWindow(QWidget):
         self.lbl_img_3_1 = QLabel()
         self.lbl_img_3_1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_3_1.setAlignment(Qt.AlignCenter)
-        img3_1_1 = QPixmap('icon/Property 1=Phone use (90%), Selected=Off.png')
-        img3_1_2 = QPixmap('icon/Property 1=Phone use (90%), Selected=On.png')
+        img3_1_1 = QPixmap('icon/PhoneUseOff.png')
+        img3_1_2 = QPixmap('icon/PhoneUseOn.png')
         self.lbl_img_3_1.setPixmap(img3_1_1)
         vbox3_1.addWidget(self.lbl_img_3_1, stretch=3)
         self.lbl_txt_3_1 = QLabel("Phone use (90%)")
@@ -340,7 +340,6 @@ class MainWindow(QWidget):
                 
                 bk2d_x = np.round(self.draw_alpha * bk2d_x + (1 - self.draw_alpha) * self.bk2d_x_old).astype(int)
                 bk2d_y = np.round(self.draw_alpha * bk2d_y + (1 - self.draw_alpha) * self.bk2d_y_old).astype(int)
-                
                 
                 self.bk2d_x_old = bk2d_x
                 self.bk2d_y_old = bk2d_y

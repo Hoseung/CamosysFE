@@ -120,16 +120,6 @@ class DistanceTriangle():
     def cal_body_size(self, keypoints_2d):
         p_head = keypoints_2d[:,0]
         feet = [keypoints_2d[:,11], keypoints_2d[:,12]]
-        # heights = np.array([self.get_obj_size(foot, p_head, verbose=False) 
-                            # for foot in feet])
-        # if max(heights) > 1.1 * min(heights):
-        #     # If uneven, take larger one
-        #     # self.foot_ind = np.argmax(heights)
-        #     height = heights[self.foot_ind]
-        #     dist = self.dist_camroot_to_foot(feet[self.foot_ind][1])
-        #     # print("[cal_body_size] Height", height, "Dist", dist)
-        # else:
-        # height = np.mean(heights)
         height = self.get_obj_size(feet[self.foot_ind], p_head, verbose=False)
         dist = 0.5*(self.dist_camroot_to_foot(feet[0][1]) + \
             self.dist_camroot_to_foot(feet[1][1]))
@@ -195,11 +185,6 @@ class DistanceTriangle():
             height_pixel = np.linalg.norm(keypoints_2d[:,0] - keypoints_2d[:,12])    
         # print("torso, thigh, calf", torso, thigh, calf)
         bone_sum_pixel = torso + thigh + calf
-        
-        # print("keypoints", keypoints_2d[:,0], keypoints_2d[:,11])
-        # print("head_to_lfoot")
-        # height_pixel = take_avg_or_larger(head_to_lfoot, head_to_rfoot)
-        # bone_sum_pixel = take_avg_or_larger(l_height, r_height)
         
         return height_pixel, bone_sum_pixel, lower
 
