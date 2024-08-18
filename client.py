@@ -14,6 +14,7 @@ class Client:
                  frame_height=1024,
                  camera_height=1.4,
                  camera_pitch=10,
+                 height_factor=1.1
                  ):
         self.server_address = (server_ip, port)
         self.sock = None
@@ -29,7 +30,7 @@ class Client:
                                                    crop=(56,1080, 448, 1472))
         self.post_processor = PostProcessor(camera_height = camera_height, 
                                             camera_pitch = camera_pitch,
-                                            height_factor=1.1)
+                                            height_factor=height_factor)
         self.postproc_gen = None
         
         self.label_dtype = np.dtype([
@@ -71,12 +72,12 @@ class Client:
             self.sock.close()
 
     def receive_frame(self):
-        flist = glob("../CamosysFE_data/test13/frame*.jpg")
+        flist = glob("../CamosysFE_data/test16/frame*.jpg")
         flist.sort()
-        labels = pickle.load(open("../CamosysFE_data/test13/label_data.pkl", "rb"))
+        labels = pickle.load(open("../CamosysFE_data/test16/label_data.pkl", "rb"))
 
         for i, label_array in enumerate(labels):
-            time.sleep(0.01)
+            time.sleep(0.02)
             frame = cv2.imread(flist[i])
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             
