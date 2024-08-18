@@ -36,6 +36,8 @@ class MainWindow(QWidget):
         super(QWidget, self).__init__(*args, **kwargs)
         self.client = client
         self.use = use
+        self.box_alpha = 0.3
+        self.box_old = None
         # self.post = Postprocess()
 
         self.setWindowTitle("Ti DEMO")
@@ -353,17 +355,23 @@ class MainWindow(QWidget):
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             
             
-            area_lmin = 10
-            area_rmax = 1024 - 10
+            area_lmin = 0
+            area_rmax = 1024
             
-            box = label_data["face_bounding_box"][0]
+            # ROI
             cv2.rectangle(frame, (int((fhd_shift_x+area_lmin)*frame_width_resize_ratio),
                                   int(fhd_shift_y*frame_height_resize_ratio)),
                           (int((1920 - fhd_shift_x - area_lmin)*frame_width_resize_ratio),
                                   int(frame_height_resize)), 
                           (105, 105, 105), 3)
-            if box is not None and box[0] > area_lmin and box[3] < area_rmax:
-                    
+            
+            # Face bounding box
+            bbox = label_data["face_bounding_box"][0]
+            if bbox is not None and bbox[0] > area_lmin and bbox[3] < area_rmax:
+                if self.box_old is None:
+                    self.box_old = bbox
+                bbox = self.box_alpha * bbox + (1 - self.box_alpha) * self.box_old
+                self.box_old = bbox
                 # FHD 이미지를 resize 할때 쓴 ratio를 얻었으므로, 
                 # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
                 
@@ -402,7 +410,7 @@ class MainWindow(QWidget):
 
                 for i in range(len(face_landmarks_x)):
                     cv2.circle(frame, (face_landmarks_x[i], face_landmarks_y[i]), radius, color, -1, cv2.LINE_AA)
-                bbox = label_data["face_bounding_box"][0].astype(int)
+                # bbox = label_data["face_bounding_box"][0].astype(int)
                 ptl = np.array([(bbox[0] + fhd_shift_x)* frame_width_resize_ratio,
                                 (bbox[1] + fhd_shift_y)* frame_height_resize_ratio]).astype(int)
                 pbr = np.array([(bbox[2] + fhd_shift_x)* frame_width_resize_ratio,
