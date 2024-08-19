@@ -52,10 +52,13 @@ class CameraDataGenerator:
         if not ret:
             raise Exception("Could not read frame from camera")
         else:
+            frame = cv2.flip(frame, 1)
             cropped = frame[self.crop[0]:self.crop[1],self.crop[2]:self.crop[3]]
             #cropped = cv2.resize(frame, (1024,1024))
 
         cropped = cv2.cvtColor(cropped, cv2.COLOR_RGB2GRAY)
+        cropped[:200,:] = 0
+        cropped[-200:,:] = 0
         # print("frame shape", frame.shape)
         return cropped, cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
