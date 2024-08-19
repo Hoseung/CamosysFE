@@ -90,46 +90,46 @@ class PostProcessor:
                 if face.face_hr is not None and face.face_wr is not None:
                     face.update_face_dist(flmk_x, flmk_y)
                 
-                if not empty:
-                    # print("Full body visible")
-                    if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold or keypoints_2d_conf[12] > conf_threshold:
-                        ind_ok = np.argmax([keypoints_2d_conf[11], keypoints_2d_conf[12]])
-                        self.dt.foot_ind = ind_ok
-                        # print("Foot index", self.dt.foot_ind)
-                        height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.85)
-                        
-                        if dist:
-                            #takes.append(True)
-                            cnt += 1
-                            face.update(dist, flmk_x, flmk_y)
-                            if cnt > self.cnt_initial:
-                                if running_avg == 0 and len(initial_guess) > 1:
-                                    running_avg = np.percentile(initial_guess, 90)
-                                else:
-                                    running_avg += (height - running_avg) / cnt
-
-                                    if np.abs(height - running_avg) <= 0.05 * running_avg:
-                                        running_avg = self.alpha * height + (1 - self.alpha) * running_avg
-                                    
-                                    # Update 3D Scale
-                                    l_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,3])
-                                    r_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,6])
-                                    head_to_foot3d = take_avg_or_larger(l_head_to_foot, r_head_to_foot)
-                                    scale3d = running_avg / head_to_foot3d * 100
-                                    # print("Body size", running_avg*100)
-                            elif cnt < self.cnt_initial: 
-                                # print(f"Taking {height*100:.2f}")
-                                initial_guess.append(height)
-                                
-                                # Estimating the passenger class
-                                passenger_class = -1
-                                
-                            elif cnt == self.cnt_initial: 
+            if not empty:
+                # print("Full body visible")
+                if keypoints_2d_conf[0] > conf_threshold and keypoints_2d_conf[11] > conf_threshold or keypoints_2d_conf[12] > conf_threshold:
+                    ind_ok = np.argmax([keypoints_2d_conf[11], keypoints_2d_conf[12]])
+                    self.dt.foot_ind = ind_ok
+                    # print("Foot index", self.dt.foot_ind)
+                    height, dist = self.dt.height_taken(keypoints_2d, take_frac = 0.85)
+                    
+                    if dist:
+                        #takes.append(True)
+                        cnt += 1
+                        face.update(dist, flmk_x, flmk_y)
+                        if cnt > self.cnt_initial:
+                            if running_avg == 0 and len(initial_guess) > 1:
                                 running_avg = np.percentile(initial_guess, 90)
-                                # print("Initial guess", running_avg*100)
-                        else:
-                            # print("Unreliable Height measurement222")
-                            pass
+                            else:
+                                running_avg += (height - running_avg) / cnt
+
+                                if np.abs(height - running_avg) <= 0.05 * running_avg:
+                                    running_avg = self.alpha * height + (1 - self.alpha) * running_avg
+                                
+                                # Update 3D Scale
+                                l_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,3])
+                                r_head_to_foot = np.linalg.norm(key3d[:,8]-key3d[:,6])
+                                head_to_foot3d = take_avg_or_larger(l_head_to_foot, r_head_to_foot)
+                                scale3d = running_avg / head_to_foot3d * 100
+                                # print("Body size", running_avg*100)
+                        elif cnt < self.cnt_initial: 
+                            # print(f"Taking {height*100:.2f}")
+                            initial_guess.append(height)
+                            
+                            # Estimating the passenger class
+                            passenger_class = -1
+                            
+                        elif cnt == self.cnt_initial: 
+                            running_avg = np.percentile(initial_guess, 90)
+                            # print("Initial guess", running_avg*100)
+                    else:
+                        # print("Unreliable Height measurement222")
+                        pass
                             
                     # update only when the person is detected
                     # dist_neck = np.linalg.norm(key3d[:, 7] - self.cam_loc)
