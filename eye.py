@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.spatial.distance import pdist
 import cv2
 
 def std2d(x, y):

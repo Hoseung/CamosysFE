@@ -1,8 +1,26 @@
 import numpy as np
 from ruler import DistanceTriangle, take_avg_or_larger
 from eye import Eye, Face
-from utils import StateTracker
 
+class StateTracker:
+    def __init__(self, update_threshold=5):
+        self.previous_state = -1
+        self.current_count = 0
+        self.current_measurement = -1
+        self.update_threshold = update_threshold
+
+    def update_state(self, new_measurement):
+        if new_measurement == self.current_measurement:
+            self.current_count += 1
+        else:
+            self.current_measurement = new_measurement
+            self.current_count = 1
+
+        # Change state only if we have more than 5 consistent measurements in a row
+        if self.current_count > self.update_threshold:
+            self.previous_state = self.current_measurement
+
+        return self.previous_state
 class PostProcessor:
     def __init__(self, image_width=1024, image_height=1024,
                  camera_height=1.4, camera_pitch=10, height_factor=1.2):
