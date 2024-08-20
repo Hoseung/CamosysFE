@@ -145,17 +145,17 @@ class MainWindow(QWidget):
         self.lbl_img_2_1_2 = QLabel()
         self.lbl_img_2_1_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lbl_img_2_1_2.setAlignment(Qt.AlignCenter)
-        img2_1_2_1 = QPixmap('icon/Drowsiness-1ON.png')
-        # img2_1_2_2 = QPixmap('icon/Property 1=0, Selected=On.png')
-        self.lbl_img_2_1_2.setPixmap(img2_1_2_1)
+        # img2_1_2_1 = QPixmap('icon/Drowsiness-1ON.png')
+        # # img2_1_2_2 = QPixmap('icon/Property 1=0, Selected=On.png')
+        # self.lbl_img_2_1_2.setPixmap(img2_1_2_1)
         vbox2_1_2.addWidget(self.lbl_img_2_1_2, stretch=3)
-        lbl_txt_2_1_2 = QLabel("Drowsiness")
-        lbl_txt_2_1_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        lbl_txt_2_1_2.setAlignment(Qt.AlignHCenter)
-        lbl_txt_2_1_2.setStyleSheet(
-            style_255_20
-        )
-        vbox2_1_2.addWidget(lbl_txt_2_1_2, stretch=1)
+        # lbl_txt_2_1_2 = QLabel("Drowsiness")
+        # lbl_txt_2_1_2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # lbl_txt_2_1_2.setAlignment(Qt.AlignHCenter)
+        # lbl_txt_2_1_2.setStyleSheet(
+        #     style_255_20
+        # )
+        # vbox2_1_2.addWidget(lbl_txt_2_1_2, stretch=1)
         vbox2_1.addLayout(vbox2_1_2, stretch=3)
 
         self.img_lbl = QLabel()
@@ -360,9 +360,10 @@ class MainWindow(QWidget):
                 # 좌표로 FHD 기준으로 바꿔준 뒤 ratio 사용. 
                 # face_landmarks
                 
-            if label_data["face_landmarks_x"][0][0] == -1:
-                self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
-            else:
+            
+                # print("sss", f'icon/Drowsiness{str(label_data["drowsiness"][0])}')
+                # self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
+            if not label_data["face_landmarks_x"][0][0] == -1:
                 face_landmarks_x = np.round((label_data["face_landmarks_x"][0] + self.fhd_shift_x) * frame_width_resize_ratio).astype(int)
                 face_landmarks_y = np.round((label_data["face_landmarks_y"][0] + self.fhd_shift_y) * frame_height_resize_ratio).astype(int)
 
@@ -378,7 +379,7 @@ class MainWindow(QWidget):
                 cv2.rectangle(frame, ptl, pbr, (46, 234, 255), 5)
                 
                 self.lbl_txt_2_1_1_4.setText(str(label_data["eye_openness"][0]) +"%")
-                self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
+                # self.lbl_img_2_1_2.setPixmap(QPixmap(f'icon/Drowsiness{str(label_data["drowsiness"][0])}ON.png'))
                 
                 # Phone use
                 if self.phone_use is None:
@@ -500,8 +501,8 @@ def main():
                     camera_height=args.height, 
                     camera_pitch=args.pitch,
                     height_factor=1.17) #
-    client.setup_socket()
-    client.accept_connection()
+    # client.setup_socket()
+    # client.accept_connection()
 
     use = ["distance", "eye_openness", "drowsiness", "phoneuse", "phone_use_conf", "passenger", "face_landmarks_x", "face_landmarks_y",
            "body_keypoints_x", "body_keypoints_y", "body_keypoints_z", "joint_lengths", "face_bounding_box"]
