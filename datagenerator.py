@@ -53,9 +53,6 @@ class CameraDataGenerator:
             raise Exception("Could not read frame from camera")
         else:
             frame = cv2.flip(frame, 1)
-            # cropped = frame[self.crop[0]:self.crop[1],self.crop[2]:self.crop[3]]
-            #cropped = cv2.resize(frame, (1024,1024))
-
             self.result[:,200:-200] = cv2.equalizeHist(
                                         cv2.cvtColor(frame[56:, 648:1272], 
                                                      cv2.COLOR_RGB2GRAY))
