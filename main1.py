@@ -293,15 +293,15 @@ class MainWindow(QWidget):
             bytes_per_line = w * 3
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             
-            area_lmin = 0
-            area_rmax = 1024
+            area_lmin = 200
+            area_rmax = 1024 -200
             
             # ROI
             cv2.rectangle(frame, (int((self.fhd_shift_x+area_lmin)*frame_width_resize_ratio),
                                   int(self.fhd_shift_y*frame_height_resize_ratio)),
                           (int((1920 - self.fhd_shift_x - area_lmin)*frame_width_resize_ratio),
                                   int(self.frame_height_resize)), 
-                          (105, 105, 105), 3)
+                          (105, 105, 105), 5)
             
             # # Face bounding box
             # bbox = label_data["face_bounding_box"][0]
