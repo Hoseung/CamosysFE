@@ -2,27 +2,12 @@ import math
 import numpy as np
 import cv2
 
-class DistanceTriangle():
-    """
-    All calculations in meter unit.
-    """
-    def __init__(self, 
-                 camera_height = 1.5, 
+class Camera():
+    def __init__(self,
                  fov_v=91,
-                 horizontal_fov_deg=166, 
+                 semi_undistort=False,
                  image_width = 1920,
-                 image_height = 1080, 
-                 camera_pitch = -20):
-        
-        # For 640x480
-        # self.camera_matrix = np.array([[380.5828, 0., 327.04076],
-        #                                [0., 381.61306, 245.22762],
-        #                                [0., 0., 1.]])
-        # self.P = np.array([[379.9881, 0., 326.52974, 0.],
-        #                    [0., 380.81802, 244.71673, 0.],
-        #                    [0., 0., 1., 0.]])
-        
-        # for 1920 x 1080
+                 image_height = 1080):
         self.camera_matrix = np.array([[1141.7483, 0., 981.12228],
                                         [0., 858.629385, 551.762145],
                                         [0., 0., 1.]])
@@ -30,28 +15,47 @@ class DistanceTriangle():
                            [0., 380.81802*2.25, 244.71673*2.25, 0.],
                            [0., 0., 1., 0.]])
         self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
-        
+        self._semi_undistort = semi_undistort
         self.fov_v = fov_v
         self.img_height = image_height
         self.img_width = image_width
         self.deg_per_pix = self.fov_v/self.img_height
+        self.set_undistort()        
+
+    def semi_undistort(self):
+        self.dist_coeffs *= 0.5
+        self.camera_matrix[0,0] *= 0.75
+        self.camera_matrix[1,1] *= 0.75
+
+    def set_undistort(self):
+        if self._semi_undistort:
+            self.semi_undistort()
+        self.undistort_top = self.undistort_points(self.img_width/2, 0)
+        self.undistort_bottom = self.undistort_points(self.img_width/2, self.img_height)
+        self.undistort_scale = np.abs(self.undistort_bottom[1] - self.undistort_top[1])
+        
+    def undistort_points(self, x, y):
+        points = np.array([[x, y]], dtype=np.float32).reshape(-1, 1, 2)
+        undistorted_points = cv2.undistortPoints(points, self.camera_matrix, self.dist_coeffs, P=self.P)
+        return tuple(undistorted_points[0][0])        
+       
+class DistanceTriangle(Camera):
+    """
+    All calculations in meter unit.
+    """
+    def __init__(self, 
+                 camera_height = 1.5, 
+                 horizontal_fov_deg=166, 
+                 image_width = 1920,
+                 image_height = 1080, 
+                 camera_pitch = -20):
+        super().__init__(image_width=image_width, image_height=image_height)  
         self.camera_height = camera_height
         self.camera_pitch = camera_pitch
         self.u_l_ratio = 1.2
         self.u_l_alpha = 0.1
-        self.set_undistort()
         self.foot_ind = 0
 
-    def set_undistort(self):
-        self.undistort_top = self.undistort_points(self.img_width/2, 0)
-        self.undistort_bottom = self.undistort_points(self.img_width/2, self.img_height)
-        self.undistort_scale = np.abs(self.undistort_bottom[1] - self.undistort_top[1])
-
-    def undistort_points(self, x, y):
-        points = np.array([[x, y]], dtype=np.float32).reshape(-1, 1, 2)
-        undistorted_points = cv2.undistortPoints(points, self.camera_matrix, self.dist_coeffs, P=self.P)
-        return tuple(undistorted_points[0][0])
-    
     def undistort_normed(self, p):
         """
         Undistorting causes points to move out of the scene (if central part's pix/angle is retained)

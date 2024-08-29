@@ -214,9 +214,7 @@ class MainWindow(QWidget):
                 self.bk2d_y_old = bk2d_y
                 # body_keypoints_z = np.round(label_data["body_keypoints_z"][0] * frame_z_resize_ratio).astype(int)
                 # print("after2", bk2d_x)
-                bk_3dx = label_data["body_keypoints3d"][0][0]
-                bk_3dy = label_data["body_keypoints3d"][0][1]
-                bk_3dz = label_data["body_keypoints3d"][0][2]
+                bk_3dx, bk_3dy, bk_3dz = label_data["body_keypoints3d"][0]
                 
                 color = (24, 24, 244)  # BGR
                 color2 = (46, 234, 255)

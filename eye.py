@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from ruler import Camera
 
 def std2d(x, y):
     return np.sqrt(np.var(x) + np.var(y))
@@ -36,7 +37,7 @@ def final_ear(lmks):
     return (ear, leftEye, rightEye, left_, right_)
 
 
-class Eye:
+class Eye():
     def __init__(self, drowsy_nmax=60):
         self.EAR = 0
         self.EARs = []
@@ -93,12 +94,15 @@ class Eye:
         self.drowsy_val = 0
         
         
-class Face():
+class Face(Camera):
     def __init__(self, 
                  n_initial=20,
-                 fov_v=91,
                  image_width = 1024,
                  image_height = 1024):
+        super().__init__(fov_v = 90, 
+                       semi_undistort=True,
+                       image_width=image_width, 
+                       image_height=image_height)
         self._initial_guess_face_h = np.zeros(n_initial)
         self._initial_guess_face_w = np.zeros(n_initial)
         self._initial_count = 0
@@ -107,32 +111,9 @@ class Face():
         self.face_wr = None
         self.face_cnt = 0
         self.dist_face = 0
-        # for 1920 x 1080
-        self.camera_matrix = np.array([[1141.7483, 0., 981.12228],
-                                        [0., 858.629385, 551.762145],
-                                        [0., 0., 1.]])
-        self.P = np.array([[379.9881*3, 0., 326.52974*3, 0.],
-                           [0., 380.81802*2.25, 244.71673*2.25, 0.],
-                           [0., 0., 1., 0.]])
-        self.dist_coeffs = np.array([-0.330314, 0.130840, 0.000384, 0.000347, -0.026249])
         self._reliable = False
         self.alpha = 0.05
-        self.fov_v = fov_v
-        self.img_height = image_height
-        self.img_width = image_width
-        self.deg_per_pix = self.fov_v/self.img_height
-        self.set_undistort()
 
-    def set_undistort(self):
-        self.undistort_top = self.undistort_points(self.img_width/2, 0)
-        self.undistort_bottom = self.undistort_points(self.img_width/2, self.img_height)
-        self.undistort_scale = np.abs(self.undistort_bottom[1] - self.undistort_top[1])
-
-    def undistort_points(self, x, y):
-        points = np.array([[x, y]], dtype=np.float32).reshape(-1, 1, 2)
-        undistorted_points = cv2.undistortPoints(points, self.camera_matrix, self.dist_coeffs, P=self.P)
-        return tuple(undistorted_points[0][0])
-    
     def undistort_normed(self, x, y):
         """
         Undistorting causes points to move out of the scene (if central part's pix/angle is retained)
