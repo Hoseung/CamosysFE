@@ -14,7 +14,7 @@ class Client:
                  frame_height=1024,
                  camera_height=1.4,
                  camera_pitch=10,
-                 height_factor=1.1
+                 height_factor=1.0
                  ):
         self.server_address = (server_ip, port)
         self.sock = None
@@ -28,7 +28,10 @@ class Client:
         
         self.image_generator = CameraDataGenerator(camera_index=2, 
                                                    crop=(56,1080, 448, 1472))
-        self.post_processor = PostProcessor(camera_height = camera_height, 
+        self.post_processor = PostProcessor(semi_undistort=True,
+                                            image_width=frame_width,
+                                            image_height=frame_height,
+                                            camera_height = camera_height, 
                                             camera_pitch = camera_pitch,
                                             height_factor=height_factor)
         self.postproc_gen = None

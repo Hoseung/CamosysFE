@@ -46,10 +46,13 @@ class DistanceTriangle(Camera):
     def __init__(self, 
                  camera_height = 1.5, 
                  horizontal_fov_deg=166, 
+                 semi_undistort=False,
                  image_width = 1920,
                  image_height = 1080, 
                  camera_pitch = -20):
-        super().__init__(image_width=image_width, image_height=image_height)  
+        super().__init__(semi_undistort=semi_undistort, 
+                         image_width=image_width, 
+                         image_height=image_height)  
         self.camera_height = camera_height
         self.camera_pitch = camera_pitch
         self.u_l_ratio = 1.2

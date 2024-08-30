@@ -97,10 +97,11 @@ class Eye():
 class Face(Camera):
     def __init__(self, 
                  n_initial=20,
+                 semi_undistor=False,
                  image_width = 1024,
                  image_height = 1024):
         super().__init__(fov_v = 90, 
-                       semi_undistort=True,
+                       semi_undistort=semi_undistor,
                        image_width=image_width, 
                        image_height=image_height)
         self._initial_guess_face_h = np.zeros(n_initial)

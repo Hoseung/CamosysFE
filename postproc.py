@@ -23,10 +23,14 @@ class StateTracker:
         return self.previous_state
 class PostProcessor:
     def __init__(self, image_width=1024, image_height=1024,
-                 camera_height=1.4, camera_pitch=10, height_factor=1.2):
+                 semi_undistort=False,
+                 camera_height=1.4, camera_pitch=10, height_factor=1.0):
         self.height_factor = height_factor
         self.camera_height=camera_height
-        self.dt = DistanceTriangle(camera_height=self.camera_height,
+        self.semi_undistort = semi_undistort
+        self.dt = DistanceTriangle(semi_undistort=self.semi_undistort,
+                                   image_width=image_width, image_height=image_height,
+                                   camera_height=self.camera_height,
                                    camera_pitch=camera_pitch)
     
         self.cam_loc = np.array([0,0,self.dt.camera_height])
@@ -60,7 +64,7 @@ class PostProcessor:
         conf_threshold = 50
         
         eye = Eye()
-        face = Face()
+        face = Face(semi_undistor=self.semi_undistort)
         label_array['passenger'][0] = 0
         
         while True:
